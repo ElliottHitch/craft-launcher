@@ -11,6 +11,11 @@ The launcher and all thirteen app forks are published under `ElliottHitch`. Each
 a local Windows release recipe and personal update links. All thirteen local app checkouts have
 the personal `origin` and original `upstream` remotes.
 
+The launcher and all thirteen apps now have published Windows x64 MSI and portable ZIP releases,
+with `SHA256SUMS.txt` and source provenance. Every package was built on this PC and verified again
+after upload. CADCraft's release includes fixes for incompatible font, XML, spatial-index, and UI
+dependency APIs found during its first build.
+
 The private `local-releases` hub builds, verifies, and publishes packages on Elliott's PC.
 The installed ArtCraft Launcher 0.7.0 comes from the personal release and reads the personal
 app releases. Its Update buttons install published packages; they do not merge Git changes or
