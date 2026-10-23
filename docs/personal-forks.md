@@ -74,40 +74,43 @@ Ask Codex to review the app and patch the findings you accept. Run dependency sc
 `cargo audit` when you request them, separately from packaging. A dependency scanner checks
 known advisories; it does not replace source review.
 
-Inherited CI, external security-service, and release workflows are disabled in the launcher and
-PhotoCraft, VectorCraft, FilmCraft, LightCraft, PdfCraft, EffectCraft, DesignCraft, FigCraft, and
-WordCraft. Disabling them in the four later-created forks (SoundCraft, DeckCraft, CADCraft, and
-GridCraft) remains unfinished because the required browser access was denied. Their source
-files remain available. The personal manual Windows build runs no automated tests or security
-scans. The `review-note` input records your own review of the chosen source commit.
+Inherited CI, external security-service, and release workflows are disabled in all fourteen
+forks. Their source files remain available for reference when merging upstream updates.
+The local release build verifies packages and their checksums. Source reviews and dependency
+scans run when you request them, separately from packaging. Release notes record the scope of
+the source review; a successful build does not imply a security audit.
 
 Keep publishing manual. Do not enable automatic upstream merges or publish packages directly
 from an upstream update notification.
 
 ## Build and publish a personal Windows release
 
-The [personal Windows workflow](../.github/workflows/personal-windows.yml) builds the launcher.
-The [caller template](templates/personal-release.yml) connects an app fork to that workflow.
-The installed callers pin the reusable workflow to a full commit SHA. Update that pin only
-after reviewing changes to the build workflow.
-An app may need its own Windows build dependencies or packaging adjustments before its first
-personal release. The workflow accepts an optional reviewed
-`packaging/windows/personal-prepare.ps1` in that app for those dependencies.
+Release builds run on Elliott's Windows PC through the private
+[local-releases hub](https://github.com/ElliottHitch/local-releases/actions/workflows/release.yml).
+Select the repository, its full current default-branch commit SHA, the version, the
+`windows-x64` recipe, and a review note. One manual request checks out that source, builds and
+packages it locally, verifies the declared assets and uploaded checksums, then publishes the
+release. The hub keeps an incomplete upload as a draft; failed builds are not published.
+
+Each fork's `local-release.json` declares its packaging script and exact output filenames.
+App scripts pin the launcher's shared Windows preparation helper to a commit and SHA-256.
+The helper uses each app's existing packager, pinned fonts and translations, WiX 5.0.2, Rust,
+MSVC, and the Windows SDK. Build caches are shared through `CRAFT_BUILD_CACHE` on the PC.
+The old GitHub-hosted personal release workflows are retired.
 
 Use a numeric `major.minor.patch` version that is greater than the installed version and every
 earlier personal release of that app. Set it in the app's workspace `Cargo.toml`. For the
 launcher, use `cargo xtask version set X.Y.Z`. Keep the manifest version, release tag, and asset
 version consistent. SemVer build metadata such as `+elliott.1` does not make a version newer,
-and Windows MSI upgrades also need an increasing numeric version. The workflow limits major
-and minor to 255 and patch to 65535, and rejects a version at or below an existing numeric tag
-or release, including inherited upstream tags.
+and Windows MSI upgrades also need an increasing numeric version. The Windows helper limits
+major and minor to 255 and patch to 65535. Existing release versions are not overwritten.
 
-Run the workflow with `app-id`, the full 40-character `source-sha`, `version`, and `review-note`.
-The selected commit must belong to the caller fork, and its workspace version must match the
-requested version. The workflow creates a draft release. Inspect the draft's source commit,
-version, packages, and `SHA256SUMS.txt`, then publish it explicitly as the latest release in GitHub. Drafts are not offered as launcher
-updates. The initial workflow builds unsigned Windows packages. Other platforms need their
-own release setup.
+The requested version must equal the workspace version in the selected source commit.
+The initial recipes produce unsigned Windows x64 MSI and portable ZIP packages plus
+`SHA256SUMS.txt` and provenance. The PC must be awake and Elliott logged in for its worker to
+accept a release. Linux recipes run in Docker containers; Docker must be running. These
+Windows Craft recipes do not produce macOS, Linux, FreeBSD, or other CPU packages. macOS
+packaging requires a Mac worker.
 
 The Windows launcher requires matching Authenticode signatures for its own self-update.
 Unsigned personal launcher builds therefore need manual reinstallation. Installing and updating

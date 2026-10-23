@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "recipes": {
+    "windows-x64": {
+      "engine": "powershell",
+      "script": "packaging/windows/local-release.ps1",
+      "arguments": [],
+      "environment": {},
+      "assets": [
+        "dist/release/artcraft-launcher-{version}-windows-x64.msi",
+        "dist/release/artcraft-launcher-{version}-windows-x64-portable.zip"
+      ],
+      "releaseName": "ArtCraft Launcher v{version}"
+    }
+  }
+}
