@@ -7,10 +7,9 @@ your own commits. You still need to resolve conflicts and review upstream change
 
 ## Setup status on 2026-10-23
 
-The launcher and nine app forks are published. SoundCraft, DeckCraft, CADCraft, and GridCraft
-are prepared locally under `repos/`, but GitHub is rejecting creation of their personal forks
-with `was submitted too quickly`, including through the authenticated CLI. Their personal
-release workflows and update links are ready to publish after that restriction clears.
+The launcher and all thirteen app forks are published under `ElliottHitch`. Each app has its
+personal manual release workflow and update links. GitHub's temporary fork-creation restriction
+cleared during setup.
 
 All thirteen local app checkouts have the personal `origin` and original `upstream` remotes.
 No personal binary releases have been built or published yet.
@@ -75,10 +74,12 @@ Ask Codex to review the app and patch the findings you accept. Run dependency sc
 `cargo audit` when you request them, separately from packaging. A dependency scanner checks
 known advisories; it does not replace source review.
 
-Inherited CI, external security-service, and release workflows are disabled in the configured
-personal forks. Their source files remain available. Only the personal manual Windows build
-is enabled; it runs no automated tests or security scans. The `review-note` input records your
-own review of the chosen source commit.
+Inherited CI, external security-service, and release workflows are disabled in the launcher and
+PhotoCraft, VectorCraft, FilmCraft, LightCraft, PdfCraft, EffectCraft, DesignCraft, FigCraft, and
+WordCraft. Disabling them in the four later-created forks (SoundCraft, DeckCraft, CADCraft, and
+GridCraft) remains unfinished because the required browser access was denied. Their source
+files remain available. The personal manual Windows build runs no automated tests or security
+scans. The `review-note` input records your own review of the chosen source commit.
 
 Keep publishing manual. Do not enable automatic upstream merges or publish packages directly
 from an upstream update notification.
