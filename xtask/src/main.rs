@@ -1,8 +1,9 @@
 //! Workspace tooling: `cargo xtask <command>`.
 //!
-//! Pure Rust (std only). External tools (`cargo`) are invoked through `std::process::Command`.
+//! Pure Rust. External tools (`cargo`, `git`) are invoked through `std::process::Command`.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 
+mod forks;
 mod icns;
 mod ico;
 mod local;
@@ -26,6 +27,9 @@ commands:
   local sync | serve | status
                   build the Craft apps from their checkouts and install them from this machine
                   (cargo xtask local help)
+  forks list | status | clone | fetch [app]
+                  manage personal fork checkouts without merging upstream changes
+                  (cargo xtask forks help)
 ";
 
 /// Packages that must build for wasm32-unknown-unknown: the pure core and the web app (which
@@ -42,6 +46,7 @@ fn main() -> ExitCode {
         Some("ico") => ico::run(&rest),
         Some("icns") => icns::run(&rest),
         Some("local") => local::run(&rest),
+        Some("forks") => forks::run(&rest),
         Some("-h" | "--help" | "help") | None => {
             print!("{USAGE}");
             Ok(())

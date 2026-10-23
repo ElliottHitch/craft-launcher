@@ -74,21 +74,21 @@ const fn app(
 
 /// The Craft App Suite, in display order matching getartcraft.com:
 pub const SUITE: [CraftApp; 13] = [
-    app("photocraft", "PhotoCraft", "Image editing", [[0x2f, 0x7b, 0xf5], [0x1a, 0x5b, 0xc4], [0x7f, 0xb0, 0xff]], "storytold/photocraft"),
-    app("vectorcraft", "VectorCraft", "Vector illustration", [[0xe8, 0x57, 0x3f], [0xb8, 0x3a, 0x24], [0xff, 0x8a, 0x70]], "storytold/vectorcraft"),
+    app("photocraft", "PhotoCraft", "Image editing", [[0x2f, 0x7b, 0xf5], [0x1a, 0x5b, 0xc4], [0x7f, 0xb0, 0xff]], "ElliottHitch/photocraft"),
+    app("vectorcraft", "VectorCraft", "Vector illustration", [[0xe8, 0x57, 0x3f], [0xb8, 0x3a, 0x24], [0xff, 0x8a, 0x70]], "ElliottHitch/vectorcraft"),
     app(
         "filmcraft",
         "FilmCraft",
         "Video editing, color and sound",
         [[0x8b, 0x5c, 0xf6], [0x6a, 0x3f, 0xd6], [0xb6, 0x9c, 0xff]],
-        "storytold/filmcraft",
+        "ElliottHitch/filmcraft",
     ),
     app(
         "lightcraft",
         "LightCraft",
         "Photo library and raw development",
         [[0xf2, 0xa5, 0x16], [0x8a, 0x58, 0x00], [0xff, 0xc1, 0x4d]],
-        "storytold/lightcraft",
+        "ElliottHitch/lightcraft",
     ),
     CraftApp {
         former_ids: &["printcraft"],
@@ -98,7 +98,7 @@ pub const SUITE: [CraftApp; 13] = [
             "PdfCraft",
             "Reading, organizing and protecting PDFs",
             [[0x12, 0xa5, 0x8a], [0x0a, 0x75, 0x63], [0x3f, 0xd6, 0xb8]],
-            "storytold/pdfcraft",
+            "ElliottHitch/pdfcraft",
         )
     },
     app(
@@ -106,54 +106,56 @@ pub const SUITE: [CraftApp; 13] = [
         "EffectCraft",
         "Motion graphics and visual effects",
         [[0xe0, 0x36, 0x8f], [0xb0, 0x20, 0x6c], [0xff, 0x7a, 0xb8]],
-        "storytold/effectcraft",
+        "ElliottHitch/effectcraft",
     ),
     app(
         "designcraft",
         "DesignCraft",
         "Page layout and publishing",
         [[0x7b, 0xb5, 0x1c], [0x45, 0x70, 0x08], [0xa6, 0xe0, 0x4a]],
-        "storytold/designcraft",
+        "ElliottHitch/designcraft",
     ),
     app(
         "figcraft",
         "FigCraft",
         "Interface design and prototyping",
         [[0x02, 0xda, 0x96], [0x04, 0x7a, 0x56], [0x4f, 0xe8, 0xb6]],
-        "storytold/figcraft",
+        "ElliottHitch/figcraft",
     ),
-    app("wordcraft", "WordCraft", "Writing and document design", [[0x3f, 0x5f, 0xe0], [0x2a, 0x44, 0xb8], [0x8e, 0xa2, 0xff]], "storytold/wordcraft"),
+    app("wordcraft", "WordCraft", "Writing and document design", [[0x3f, 0x5f, 0xe0], [0x2a, 0x44, 0xb8], [0x8e, 0xa2, 0xff]], "ElliottHitch/wordcraft"),
     app(
         "soundcraft",
         "SoundCraft",
         "Recording, editing and mixing audio",
         [[0x1f, 0xa5, 0xc9], [0x0e, 0x72, 0x90], [0x5f, 0xd0, 0xee]],
-        "storytold/soundcraft",
+        "ElliottHitch/soundcraft",
     ),
     app(
         "deckcraft",
         "DeckCraft",
         "Presentations and slide shows",
         [[0xf0, 0x7a, 0x1e], [0xa8, 0x4f, 0x0a], [0xff, 0xa0, 0x60]],
-        "storytold/deckcraft",
+        "ElliottHitch/deckcraft",
     ),
     app(
         "cadcraft",
         "CADCraft",
         "Computer-aided design and drafting",
         [[0x3e, 0xa6, 0xe8], [0x1a, 0x6f, 0xa8], [0x7c, 0xc8, 0xff]],
-        "storytold/cadcraft",
+        "ElliottHitch/cadcraft",
     ),
-    app("gridcraft", "GridCraft", "Spreadsheets and data", [[0x1f, 0x9d, 0x55], [0x12, 0x70, 0x3a], [0x4f, 0xd6, 0x8a]], "storytold/gridcraft"),
+    app("gridcraft", "GridCraft", "Spreadsheets and data", [[0x1f, 0x9d, 0x55], [0x12, 0x70, 0x3a], [0x4f, 0xd6, 0x8a]], "ElliottHitch/gridcraft"),
 ];
 
 /// ArtCraft's website.
 pub const WEBSITE_URL: &str = "https://getartcraft.com";
 /// The GitHub account every Craft App's repository lives under: the only one the launcher
 /// installs from, whatever the release feed says.
-pub const GITHUB_OWNER: &str = "storytold";
-/// ArtCraft on GitHub: every Craft App's source.
-pub const GITHUB_URL: &str = "https://github.com/storytold";
+pub const GITHUB_OWNER: &str = "ElliottHitch";
+/// The personal forks on GitHub.
+pub const GITHUB_URL: &str = "https://github.com/ElliottHitch";
+/// The official feed describes upstream builds, so personal forks must query GitHub directly.
+pub const USE_ARTCRAFT_RELEASE_FEED: bool = false;
 /// ArtCraft's social accounts: (service, URL). Shown as small icons, less prominent than Discord.
 pub const SOCIAL: [(&str, &str); 5] = [
     ("X", "https://x.com/get_artcraft"),
@@ -176,11 +178,11 @@ pub const LAUNCHER: CraftApp = app(
     "ArtCraft Launcher",
     "Installs and updates the Craft App Suite",
     [[0x0b, 0x0b, 0x0c], [0x0b, 0x0b, 0x0c], [0xf2, 0xf1, 0xee]],
-    "storytold/craft-launcher",
+    "ElliottHitch/craft-launcher",
 );
 
 /// The launcher's own repo, checked so it can say when a newer launcher is out.
-pub const LAUNCHER_REPO: &str = "storytold/craft-launcher";
+pub const LAUNCHER_REPO: &str = "ElliottHitch/craft-launcher";
 /// The launcher's own asset stem.
 pub const LAUNCHER_ID: &str = "artcraft-launcher";
 
@@ -196,7 +198,6 @@ mod tests {
         ids.dedup();
         assert_eq!(ids.len(), SUITE.len());
         for a in &SUITE {
-            assert_eq!(a.repo, format!("storytold/{}", a.id));
             assert_eq!(a.name.to_lowercase(), a.id);
         }
     }

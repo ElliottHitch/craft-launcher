@@ -1,3 +1,7 @@
+> This personal fork installs releases from **ElliottHitch's Craft App Suite forks**.
+> See [the personal fork workflow](docs/personal-forks.md) for checkouts, upstream updates,
+> security review, and publishing. Downloads require a published personal release.
+
 <p align="center">
   <a href="https://getartcraft.com/">
     <picture>
@@ -24,9 +28,6 @@
   <img alt="macOS · Windows · Linux · FreeBSD · Web" src="https://img.shields.io/badge/macOS%20%C2%B7%20Windows%20%C2%B7%20Linux%20%C2%B7%20FreeBSD%20%C2%B7%20Web-native-26282e?style=flat-square">
   <img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-3a3a3a?style=flat-square">
   <img alt="Status: early alpha" src="https://img.shields.io/badge/status-early%20alpha-d69e2e?style=flat-square">
-  <br>
-  <a href="https://sonarcloud.io/project/overview?id=storytold_craft-launcher"><img alt="Scanned by SonarCloud" src="https://img.shields.io/badge/Scanned_by-SonarCloud-4b9fd5?style=flat-square&logo=sonarqubecloud&logoColor=white"></a>
-  <a href="https://coderabbit.ai"><img alt="Reviewed by CodeRabbit" src="https://img.shields.io/coderabbit/prs/github/storytold/craft-launcher?style=flat-square&label=Reviewed%20by%20CodeRabbit&logo=coderabbit"></a>
 </p>
 
 <p align="center">
@@ -34,7 +35,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/storytold/craft-launcher/releases/latest"><b>Download ArtCraft Launcher</b></a> ·
+  <a href="https://github.com/ElliottHitch/craft-launcher/releases/latest"><b>Download ArtCraft Launcher</b></a> ·
   <a href="https://getartcraft.com/">ArtCraft</a> ·
   <a href="https://getartcraft.com/apps">The Craft App Suite</a>
 </p>
@@ -139,7 +140,11 @@ portable zip's executable) and keeps the previous two runs as `artcraft-launcher
 
 ## Downloads
 
-Download the build for your computer from the [latest release](https://github.com/storytold/craft-launcher/releases/latest), or browse [all releases](https://github.com/storytold/craft-launcher/releases). Every release has a `SHA256SUMS.txt` to check the files against. `<ver>` is the version number, for example `0.1.0`.
+The personal release workflow currently produces unsigned Windows x64 packages only. The
+platform table below describes the upstream packaging formats; other personal builds are not
+available until their release setup is added. Unsigned launcher updates require manual installation.
+
+Download the build for your computer from the [latest personal release](https://github.com/ElliottHitch/craft-launcher/releases/latest), or browse [all personal releases](https://github.com/ElliottHitch/craft-launcher/releases). Every release has a `SHA256SUMS.txt` to check the files against. `<ver>` is the version number, for example `0.1.0`.
 
 **Windows** (10 and 11)
 
@@ -194,7 +199,7 @@ You need a recent stable Rust (1.90 or newer). On Linux, install the windowing h
 (Debian/Ubuntu: `sudo apt install libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev`).
 
 ```sh
-git clone https://github.com/storytold/craft-launcher
+git clone https://github.com/ElliottHitch/craft-launcher
 cd craft-launcher
 cargo run --release -p artcraft-launcher   # the desktop app
 cargo xtask ci                             # fmt, clippy, tests and the wasm check
@@ -212,7 +217,7 @@ cd apps/artcraft-launcher-web && trunk serve
 `flake.nix` gives a dev shell (`nix develop`, then the cargo commands above) and a package:
 
 ```sh
-nix run github:storytold/craft-launcher
+nix run github:ElliottHitch/craft-launcher
 ```
 
 On NixOS this uses the system's graphics drivers. On other distros, a Nix-built program can't load
@@ -221,22 +226,29 @@ the host's GPU drivers, so the window may fail to open. Run it through
 variant), or use the AppImage, `.deb` or `.rpm` release:
 
 ```sh
-nix run --impure github:nix-community/nixGL -- nix run github:storytold/craft-launcher
+nix run --impure github:nix-community/nixGL -- nix run github:ElliottHitch/craft-launcher
 ```
 
 ### Installing your own builds
 
-To install and update the Craft apps from checkouts on your machine instead of GitHub, clone them
-next to this repo (`../photocraft`, `../wordcraft`, …) and run:
+To install and update the Craft apps from personal checkouts on your machine, clone them into
+`repos/` and run these commands from the launcher root:
 
-```sh
-cargo xtask local sync      # git pull every app, build and package each new version into ../local-mirror
-cargo xtask local serve     # serve the builds and a release feed on http://127.0.0.1:8787/
-ARTCRAFT_LAUNCHER_DOWNLOAD_BASE=http://127.0.0.1:8787/ cargo run --release -p artcraft-launcher --features local-mirror
+```powershell
+cargo xtask forks clone
+cargo xtask local sync --root repos --no-pull --only photocraft
+cargo xtask local serve --mirror repos/local-mirror
 ```
 
-Run `sync` again whenever you want updates, or let the server do it: `cargo xtask local serve
---sync-every 1h` pulls and builds on that interval while it serves. An app is rebuilt when its
+In another PowerShell terminal at the launcher root:
+
+```powershell
+$env:ARTCRAFT_LAUNCHER_DOWNLOAD_BASE = 'http://127.0.0.1:8787/'
+cargo run --release -p artcraft-launcher --features local-mirror
+```
+
+Run `sync` again whenever you want to package your latest local changes. Keep `--no-pull` to
+build the checkout as it stands, and change `--only` to select another app. An app is rebuilt when its
 checkout's version isn't in the mirror yet (`--rebuild` forces it), and the launcher's next check
 picks it up. Add `--every-commit` to build every new commit instead, as a dev version between
 releases (`0.4.0` builds as `0.4.1-dev.<commit time>`), which the launcher offers as an update. While
@@ -259,19 +271,19 @@ stand on its own.
 
 | | App | What it's for | Code | Learn more |
 |:-:|---|---|---|---|
-| <img src="https://raw.githubusercontent.com/storytold/photocraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.photocraft.png" alt="" width="32" height="32"> | **PhotoCraft** | Image editing: layers, masks, type and real PSD files | [GitHub](https://github.com/storytold/photocraft) | [Website](https://getartcraft.com/apps/photocraft) |
-| <img src="https://raw.githubusercontent.com/storytold/vectorcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.vectorcraft.png" alt="" width="32" height="32"> | **VectorCraft** | Vector illustration | [GitHub](https://github.com/storytold/vectorcraft) | [Website](https://getartcraft.com/apps/vectorcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/filmcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.filmcraft.png" alt="" width="32" height="32"> | **FilmCraft** | Video editing, color and sound | [GitHub](https://github.com/storytold/filmcraft) | [Website](https://getartcraft.com/apps/filmcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/lightcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.lightcraft.png" alt="" width="32" height="32"> | **LightCraft** | Photo library and raw development | [GitHub](https://github.com/storytold/lightcraft) | [Website](https://getartcraft.com/apps/lightcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/pdfcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.pdfcraft.png" alt="" width="32" height="32"> | **PdfCraft** | Reading, organizing and protecting PDFs | [GitHub](https://github.com/storytold/pdfcraft) | [Website](https://getartcraft.com/apps/pdfcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/effectcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.effectcraft.png" alt="" width="32" height="32"> | **EffectCraft** | Motion graphics and visual effects | [GitHub](https://github.com/storytold/effectcraft) | [Website](https://getartcraft.com/apps/effectcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/designcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.designcraft.png" alt="" width="32" height="32"> | **DesignCraft** | Page layout and publishing | [GitHub](https://github.com/storytold/designcraft) | [Website](https://getartcraft.com/apps/designcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/figcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.figcraft.png" alt="" width="32" height="32"> | **FigCraft** | Interface design and prototyping | [GitHub](https://github.com/storytold/figcraft) | [Website](https://getartcraft.com/apps/figcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/wordcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.wordcraft.png" alt="" width="32" height="32"> | **WordCraft** | Word processing and documents | [GitHub](https://github.com/storytold/wordcraft) | [Website](https://getartcraft.com/apps/wordcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/soundcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.soundcraft.png" alt="" width="32" height="32"> | **SoundCraft** | Audio recording and editing | [GitHub](https://github.com/storytold/soundcraft) | [Website](https://getartcraft.com/apps/soundcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/deckcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.deckcraft.png" alt="" width="32" height="32"> | **DeckCraft** | Presentations and slide decks | [GitHub](https://github.com/storytold/deckcraft) | [Website](https://getartcraft.com/apps/deckcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/cadcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.cadcraft.png" alt="" width="32" height="32"> | **CADCraft** | Computer-aided design | [GitHub](https://github.com/storytold/cadcraft) | [Website](https://getartcraft.com/apps/cadcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/gridcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.gridcraft.png" alt="" width="32" height="32"> | **GridCraft** | Spreadsheets and data | [GitHub](https://github.com/storytold/gridcraft) | [Website](https://getartcraft.com/apps/gridcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/photocraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.photocraft.png" alt="" width="32" height="32"> | **PhotoCraft** | Image editing: layers, masks, type and real PSD files | [Personal fork](https://github.com/ElliottHitch/photocraft) | [Website](https://getartcraft.com/apps/photocraft) |
+| <img src="https://raw.githubusercontent.com/storytold/vectorcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.vectorcraft.png" alt="" width="32" height="32"> | **VectorCraft** | Vector illustration | [Personal fork](https://github.com/ElliottHitch/vectorcraft) | [Website](https://getartcraft.com/apps/vectorcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/filmcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.filmcraft.png" alt="" width="32" height="32"> | **FilmCraft** | Video editing, color and sound | [Personal fork](https://github.com/ElliottHitch/filmcraft) | [Website](https://getartcraft.com/apps/filmcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/lightcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.lightcraft.png" alt="" width="32" height="32"> | **LightCraft** | Photo library and raw development | [Personal fork](https://github.com/ElliottHitch/lightcraft) | [Website](https://getartcraft.com/apps/lightcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/pdfcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.pdfcraft.png" alt="" width="32" height="32"> | **PdfCraft** | Reading, organizing and protecting PDFs | [Personal fork](https://github.com/ElliottHitch/pdfcraft) | [Website](https://getartcraft.com/apps/pdfcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/effectcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.effectcraft.png" alt="" width="32" height="32"> | **EffectCraft** | Motion graphics and visual effects | [Personal fork](https://github.com/ElliottHitch/effectcraft) | [Website](https://getartcraft.com/apps/effectcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/designcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.designcraft.png" alt="" width="32" height="32"> | **DesignCraft** | Page layout and publishing | [Personal fork](https://github.com/ElliottHitch/designcraft) | [Website](https://getartcraft.com/apps/designcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/figcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.figcraft.png" alt="" width="32" height="32"> | **FigCraft** | Interface design and prototyping | [Personal fork](https://github.com/ElliottHitch/figcraft) | [Website](https://getartcraft.com/apps/figcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/wordcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.wordcraft.png" alt="" width="32" height="32"> | **WordCraft** | Word processing and documents | [Personal fork](https://github.com/ElliottHitch/wordcraft) | [Website](https://getartcraft.com/apps/wordcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/soundcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.soundcraft.png" alt="" width="32" height="32"> | **SoundCraft** | Audio recording and editing | [Personal fork](https://github.com/ElliottHitch/soundcraft) | [Website](https://getartcraft.com/apps/soundcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/deckcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.deckcraft.png" alt="" width="32" height="32"> | **DeckCraft** | Presentations and slide decks | [Personal fork](https://github.com/ElliottHitch/deckcraft) | [Website](https://getartcraft.com/apps/deckcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/cadcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.cadcraft.png" alt="" width="32" height="32"> | **CADCraft** | Computer-aided design | [Personal fork](https://github.com/ElliottHitch/cadcraft) | [Website](https://getartcraft.com/apps/cadcraft) |
+| <img src="https://raw.githubusercontent.com/storytold/gridcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.gridcraft.png" alt="" width="32" height="32"> | **GridCraft** | Spreadsheets and data | [Personal fork](https://github.com/ElliottHitch/gridcraft) | [Website](https://getartcraft.com/apps/gridcraft) |
 
 And [**ArtCraft**](https://getartcraft.com/) itself, our AI image and video studio for artists who want real control.
 

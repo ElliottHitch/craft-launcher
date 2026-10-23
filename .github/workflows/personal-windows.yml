@@ -1,0 +1,361 @@
+name: Personal Windows draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      app-id:
+        description: App asset stem, artcraft-launcher for the launcher
+        type: string
+        default: artcraft-launcher
+        required: true
+      source-sha:
+        description: Reviewed 40-character commit SHA of the selected branch
+        type: string
+        required: true
+      version:
+        description: Existing Cargo.toml version, numeric X.Y.Z and newer than all release tags
+        type: string
+        required: true
+      review-note:
+        description: Source review reference and accepted findings for this exact commit
+        type: string
+        required: true
+  workflow_call:
+    inputs:
+      app-id:
+        type: string
+        required: true
+      source-sha:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+      review-note:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-windows-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    if: github.event_name == 'workflow_dispatch' && github.repository_owner == 'ElliottHitch'
+    runs-on: windows-2022
+    timeout-minutes: 120
+    outputs:
+      title: ${{ steps.inputs.outputs.title }}
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      APP_ID: ${{ inputs.app-id }}
+      SOURCE_SHA: ${{ inputs.source-sha }}
+      VERSION: ${{ inputs.version }}
+      REVIEW_NOTE: ${{ inputs.review-note }}
+      CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
+      CRAFT_FONTS_REQUIRED: '1'
+      CARGO_INCREMENTAL: '0'
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target/personal-windows
+      DIST: ${{ github.workspace }}/dist/release
+    steps:
+      - name: Validate the manual release request
+        id: inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $apps = @{
+            'artcraft-launcher' = 'ArtCraft Launcher'
+            photocraft = 'PhotoCraft'; lightcraft = 'LightCraft'; filmcraft = 'FilmCraft'
+            designcraft = 'DesignCraft'; vectorcraft = 'VectorCraft'; pdfcraft = 'PdfCraft'
+            effectcraft = 'EffectCraft'; wordcraft = 'WordCraft'; deckcraft = 'DeckCraft'
+            gridcraft = 'GridCraft'; cadcraft = 'CADCraft'; soundcraft = 'SoundCraft'; figcraft = 'FigCraft'
+          }
+          if (-not $apps.ContainsKey($env:APP_ID)) { throw 'Unknown Craft App Suite asset stem.' }
+          $repoName = if ($env:APP_ID -eq 'artcraft-launcher') { 'craft-launcher' } else { $env:APP_ID }
+          if ($env:GITHUB_REPOSITORY -cne "ElliottHitch/$repoName") { throw 'The app must match its ElliottHitch fork.' }
+          if ($env:SOURCE_SHA -notmatch '^[0-9a-fA-F]{40}$' -or $env:SOURCE_SHA -ne $env:GITHUB_SHA) {
+            throw 'Select the branch whose current commit is the reviewed source-sha.'
+          }
+          if ($env:VERSION -notmatch '^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,4})$') {
+            throw 'Use a numeric X.Y.Z version without a prerelease or build suffix.'
+          }
+          $version = [version]$env:VERSION
+          if ($version.Major -gt 255 -or $version.Minor -gt 255 -or $version.Build -gt 65535) {
+            throw 'MSI versions require major and minor <=255 and patch <=65535.'
+          }
+          if ([string]::IsNullOrWhiteSpace($env:REVIEW_NOTE) -or $env:REVIEW_NOTE.Length -gt 2000) {
+            throw 'Record the source review and accepted findings in review-note, at most 2000 characters.'
+          }
+          $agent = "User-Agent: ArtCraft-Launcher/$env:VERSION"
+          $tags = @(gh api --paginate "repos/$env:GITHUB_REPOSITORY/tags" -H $agent --jq '.[].name')
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read existing tags.' }
+          $releases = @(gh api --paginate "repos/$env:GITHUB_REPOSITORY/releases" -H $agent --jq '.[].tag_name')
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read existing releases, including drafts.' }
+          foreach ($tag in $tags + $releases) {
+            if ($tag -eq "v$env:VERSION") { throw "Tag or release $tag already exists. No release is overwritten." }
+            if ($tag -match '^v?([0-9]+\.[0-9]+\.[0-9]+)$') {
+              $prior = $null
+              if ([version]::TryParse($Matches[1], [ref]$prior) -and $version -le $prior) {
+                throw "Version $env:VERSION must be newer than existing $tag. Update Cargo.toml explicitly first."
+              }
+            }
+          }
+          "title=$($apps[$env:APP_ID])" >> $env:GITHUB_OUTPUT
+          "CARGO_HTTP_USER_AGENT=ArtCraft-Launcher/$env:VERSION" >> $env:GITHUB_ENV
+
+      - name: Check out the reviewed caller commit
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+
+      - name: Read the package version
+        id: package-version
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $inPackage = $false
+          $packageVersion = $null
+          foreach ($line in Get-Content -LiteralPath Cargo.toml) {
+            if ($line -match '^\s*\[') { $inPackage = $line.Trim() -eq '[workspace.package]'; continue }
+            if ($inPackage -and $line -match '^\s*version\s*=\s*"([^"]+)"') { $packageVersion = $Matches[1]; break }
+          }
+          if ($packageVersion -cne $env:VERSION) { throw 'version must equal the reviewed Cargo.toml workspace version. No override is applied.' }
+          if (-not (Test-Path -LiteralPath Cargo.lock -PathType Leaf)) { throw 'Commit Cargo.lock before releasing.' }
+          if (-not (Test-Path -LiteralPath packaging/windows/package.ps1 -PathType Leaf)) { throw 'This workflow requires the app Windows packager.' }
+          if (Test-Path -LiteralPath craft-i18n.rev -PathType Leaf) {
+            $i18nSha = (Get-Content -LiteralPath craft-i18n.rev -Raw).Trim()
+            if ($i18nSha -notmatch '^[0-9a-f]{40}$') { throw 'craft-i18n.rev must contain one pinned commit SHA.' }
+            "i18n-sha=$i18nSha" >> $env:GITHUB_OUTPUT
+            "CRAFT_I18N_SHA=$i18nSha" >> $env:GITHUB_ENV
+            "CRAFT_I18N_DIR=$env:GITHUB_WORKSPACE/craft-i18n" >> $env:GITHUB_ENV
+            'CRAFT_I18N_REQUIRED=1' >> $env:GITHUB_ENV
+          }
+          git config --global http.userAgent "ArtCraft-Launcher/$env:VERSION"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not configure the download User-Agent.' }
+
+      - name: Install the Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --target x86_64-pc-windows-msvc
+          if ($LASTEXITCODE -ne 0) { throw 'Rust toolchain installation failed.' }
+          rustup default stable
+          if ($LASTEXITCODE -ne 0) { throw 'Could not select stable Rust.' }
+
+      - name: Install the pinned dependency scanner
+        working-directory: ${{ runner.temp }}
+        run: |
+          cargo +stable install cargo-audit --version 0.22.2 --locked --root "$env:RUNNER_TEMP/personal-tools"
+          if ($LASTEXITCODE -ne 0) { throw 'cargo-audit installation failed.' }
+
+      - name: Scan the committed lockfile against RustSec
+        id: audit
+        working-directory: ${{ runner.temp }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE/dist/security" | Out-Null
+          & "$env:RUNNER_TEMP/personal-tools/bin/cargo-audit.exe" audit --file "$env:GITHUB_WORKSPACE/Cargo.lock" --json > "$env:GITHUB_WORKSPACE/dist/security/cargo-audit.json"
+          $auditExit = $LASTEXITCODE
+          if ($auditExit -ne 0) { throw "cargo-audit failed with exit code $auditExit. Review the security report before releasing." }
+
+      - name: Save the dependency scan report
+        if: always() && steps.audit.outcome != 'skipped' && hashFiles('dist/security/cargo-audit.json') != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: personal-security-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dist/security/cargo-audit.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Check out the upstream suite's pinned fonts
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: storytold/craft-fonts
+          ref: bfcbf714e45a3ea8e98f88ab2b7971372a576414
+          path: craft-fonts
+          persist-credentials: false
+
+      - name: Check out the app's pinned translations
+        if: steps.package-version.outputs.i18n-sha != ''
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: storytold/craft-i18n
+          ref: ${{ steps.package-version.outputs.i18n-sha }}
+          path: craft-i18n
+          persist-credentials: false
+
+      - name: Install WiX and locate the Windows SDK
+        run: |
+          $ErrorActionPreference = 'Stop'
+          dotnet tool install --global wix --version 5.0.2
+          if ($LASTEXITCODE -ne 0) { throw 'WiX installation failed.' }
+          wix extension add -g WixToolset.UI.wixext/5.0.2 WixToolset.Util.wixext/5.0.2
+          if ($LASTEXITCODE -ne 0) { throw 'WiX extension installation failed.' }
+          $sdk = Get-ChildItem -LiteralPath "${env:ProgramFiles(x86)}/Windows Kits/10/bin" -Directory |
+            Where-Object { $_.Name -match '^10\.[0-9.]+$' -and (Test-Path -LiteralPath (Join-Path $_.FullName 'x64/rc.exe')) } |
+            Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+          if (-not $sdk) { throw 'The Windows SDK resource compiler is missing.' }
+          (Join-Path $sdk.FullName 'x64') >> $env:GITHUB_PATH
+
+      - name: Prepare app-specific packaging dependencies
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $prepare = Join-Path $env:GITHUB_WORKSPACE 'packaging/windows/personal-prepare.ps1'
+          if (Test-Path -LiteralPath $prepare -PathType Leaf) {
+            & $prepare
+            if (-not $?) { throw 'App-specific packaging preparation failed.' }
+          }
+          git diff --exit-code $env:SOURCE_SHA --
+          if ($LASTEXITCODE -ne 0) { throw 'Packaging preparation changed reviewed source files.' }
+
+      - name: Build and package Windows x64
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $prefix = $env:APP_ID.ToUpperInvariant().Replace('-', '_')
+          [Environment]::SetEnvironmentVariable("${prefix}_BUILD_SHA", $env:SOURCE_SHA)
+          [Environment]::SetEnvironmentVariable("${prefix}_BUILD_DATE", (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd'))
+          & ./packaging/windows/package.ps1 -Arch x64
+          if (-not $? -or $LASTEXITCODE -ne 0) { throw 'Windows packaging failed.' }
+          git diff --exit-code $env:SOURCE_SHA --
+          if ($LASTEXITCODE -ne 0) { throw 'Packaging changed reviewed source files.' }
+
+      - name: Record the build and checksum its release assets
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $names = @("$env:APP_ID-$env:VERSION-windows-x64.msi", "$env:APP_ID-$env:VERSION-windows-x64-portable.zip")
+          foreach ($name in $names) {
+            $file = Get-Item -LiteralPath (Join-Path $env:DIST $name)
+            if ($file.Length -eq 0) { throw "Empty release asset $name." }
+          }
+          Copy-Item -LiteralPath dist/security/cargo-audit.json -Destination (Join-Path $env:DIST 'cargo-audit.json')
+          $rustc = @(rustc -Vv)
+          if ($LASTEXITCODE -ne 0) { throw 'Could not record the Rust compiler.' }
+          @{
+            repository = $env:GITHUB_REPOSITORY
+            source_sha = $env:SOURCE_SHA.ToLowerInvariant()
+            version = $env:VERSION
+            target = 'x86_64-pc-windows-msvc'
+            created_utc = (Get-Date).ToUniversalTime().ToString('o')
+            workflow_ref = $env:GITHUB_WORKFLOW_REF
+            workflow_sha = $env:GITHUB_WORKFLOW_SHA
+            workflow_run = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID/attempts/$env:GITHUB_RUN_ATTEMPT"
+            rustc = $rustc
+            cargo_lock_sha256 = (Get-FileHash -LiteralPath Cargo.lock -Algorithm SHA256).Hash.ToLowerInvariant()
+            craft_fonts_sha = 'bfcbf714e45a3ea8e98f88ab2b7971372a576414'
+            craft_i18n_sha = $env:CRAFT_I18N_SHA
+            dependency_scanner = 'cargo-audit 0.22.2'
+            scan_scope = 'Committed Cargo.lock against known RustSec advisories. Source review and native dependency review are separate.'
+            review_note = $env:REVIEW_NOTE
+            signed = $false
+          } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $env:DIST 'personal-build.json') -Encoding utf8NoBOM
+          $names += 'cargo-audit.json', 'personal-build.json'
+          $sums = foreach ($name in $names | Sort-Object) {
+            $hash = (Get-FileHash -LiteralPath (Join-Path $env:DIST $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          $sums | Set-Content -LiteralPath (Join-Path $env:DIST 'SHA256SUMS.txt') -Encoding utf8NoBOM
+
+      - name: Save the draft release assets
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: personal-windows-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            dist/release/${{ inputs.app-id }}-${{ inputs.version }}-windows-x64.msi
+            dist/release/${{ inputs.app-id }}-${{ inputs.version }}-windows-x64-portable.zip
+            dist/release/cargo-audit.json
+            dist/release/personal-build.json
+            dist/release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  draft:
+    needs: package
+    runs-on: windows-2022
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      APP_ID: ${{ inputs.app-id }}
+      APP_TITLE: ${{ needs.package.outputs.title }}
+      SOURCE_SHA: ${{ inputs.source-sha }}
+      VERSION: ${{ inputs.version }}
+      REVIEW_NOTE: ${{ inputs.review-note }}
+    steps:
+      - name: Download this run's release assets
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: personal-windows-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release-assets
+
+      - name: Create a new draft without replacing any release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+          }
+          $agent = "ArtCraft-Launcher/$env:VERSION"
+          $api = "https://api.github.com/repos/$env:GITHUB_REPOSITORY"
+          $tag = "v$env:VERSION"
+          $existing = @(gh api --paginate "repos/$env:GITHUB_REPOSITORY/releases" -H "User-Agent: $agent" --jq '.[].tag_name')
+          if ($LASTEXITCODE -ne 0) { throw 'Could not recheck existing releases.' }
+          if ($tag -in $existing) { throw 'A release appeared during the build. No release is overwritten.' }
+          $tags = @(gh api --paginate "repos/$env:GITHUB_REPOSITORY/tags" -H "User-Agent: $agent" --jq '.[].name')
+          if ($LASTEXITCODE -ne 0) { throw 'Could not recheck existing tags.' }
+          if ($tag -in $tags) { throw 'The release tag appeared during the build. No tag is moved.' }
+          foreach ($priorTag in $tags + $existing) {
+            if ($priorTag -match '^v?([0-9]+\.[0-9]+\.[0-9]+)$') {
+              $prior = $null
+              if ([version]::TryParse($Matches[1], [ref]$prior) -and [version]$env:VERSION -le $prior) {
+                throw "A newer version $priorTag appeared during the build."
+              }
+            }
+          }
+          $files = @("$env:APP_ID-$env:VERSION-windows-x64.msi", "$env:APP_ID-$env:VERSION-windows-x64-portable.zip", 'cargo-audit.json', 'personal-build.json')
+          $expected = foreach ($name in $files | Sort-Object) {
+            $hash = (Get-FileHash -LiteralPath (Join-Path release-assets $name) -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          $actual = @(Get-Content -LiteralPath release-assets/SHA256SUMS.txt)
+          if (@(Compare-Object $expected $actual).Count -ne 0) { throw 'Release assets do not match SHA256SUMS.txt.' }
+          $body = @(
+            "Personal Windows x64 build of $env:APP_TITLE. These packages are unsigned."
+            ''
+            "Source commit: https://github.com/$env:GITHUB_REPOSITORY/commit/$env:SOURCE_SHA"
+            "Build run: $env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+            ''
+            'Source review record:'
+            $env:REVIEW_NOTE
+            ''
+            'cargo-audit 0.22.2 completed against the committed Cargo.lock. Its report is attached.'
+            'The dependency scan does not replace source review or inspect native libraries.'
+            'Review the source, scan report, and packages before manually publishing this draft as the latest release.'
+          ) -join "`n"
+          $payload = @{
+            tag_name = $tag; target_commitish = $env:SOURCE_SHA
+            name = "$env:APP_TITLE v$env:VERSION"; body = $body
+            draft = $true; prerelease = $false
+          } | ConvertTo-Json
+          $tagPayload = @{ ref = "refs/tags/$tag"; sha = $env:SOURCE_SHA } | ConvertTo-Json
+          Invoke-RestMethod -Method Post -Uri "$api/git/refs" -Headers $headers -UserAgent $agent -ContentType 'application/json' -Body $tagPayload | Out-Null
+          $release = Invoke-RestMethod -Method Post -Uri "$api/releases" -Headers $headers -UserAgent $agent -ContentType 'application/json' -Body $payload
+          $upload = $release.upload_url -replace '\{.*$', ''
+          if ($upload -notmatch '^https://uploads\.github\.com/repos/ElliottHitch/[^/]+/releases/[0-9]+/assets$') {
+            throw 'Unexpected GitHub release upload URL. The draft has no uploaded packages.'
+          }
+          foreach ($name in $files + 'SHA256SUMS.txt') {
+            $uri = "${upload}?name=$([Uri]::EscapeDataString($name))"
+            Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -UserAgent $agent -ContentType 'application/octet-stream' -InFile (Join-Path release-assets $name) | Out-Null
+          }
+          "Draft created: $($release.html_url). Publish it manually after review." >> $env:GITHUB_STEP_SUMMARY

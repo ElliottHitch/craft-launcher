@@ -186,7 +186,7 @@ fn sync(o: &Opts) -> Result<(), String> {
 fn sync_one(o: &Opts, id: &str, name: &str) -> Result<Outcome, String> {
     let repo = o.root.join(id);
     if !repo.join(".git").exists() {
-        return Ok(Outcome::Skipped(format!("no checkout at {} (git clone git@github.com:storytold/{id}.git)", repo.display())));
+        return Ok(Outcome::Skipped(format!("no checkout at {} (cargo xtask forks clone {id})", repo.display())));
     }
     let mut pull_note = String::new();
     if o.pull {
@@ -427,7 +427,8 @@ fn sha256(path: &Path) -> Result<String, String> {
 fn feed(mirror: &Path, base: &str) -> String {
     let now = rfc3339(unix_now());
     let mut apps = String::new();
-    for (id, name) in APPS {
+    for app in &artcraft_launcher_core::catalog::SUITE {
+        let (id, name) = (app.id, app.name);
         let app_dir = mirror.join(id);
         let Some(version) = latest_version(&app_dir) else { continue };
         let dir = app_dir.join(&version);
@@ -454,7 +455,7 @@ fn feed(mirror: &Path, base: &str) -> String {
             r#"{}:{{"name":{},"repo":{},"latest_release":{{"tag":{},"name":{},"published_at":{},"html_url":"","prerelease":false,"notes_markdown":{},"assets":[{}]}},"app_last_fetched":{}}}"#,
             json_str(id),
             json_str(name),
-            json_str(&format!("storytold/{id}")),
+            json_str(app.repo),
             json_str(&format!("v{version}")),
             json_str(&format!("{name} v{version} (local build)")),
             json_str(&published),

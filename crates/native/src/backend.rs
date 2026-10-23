@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 use std::time::{Duration, Instant};
 
-use artcraft_launcher_core::catalog::{LAUNCHER, LAUNCHER_ID};
+use artcraft_launcher_core::catalog::{LAUNCHER, LAUNCHER_ID, USE_ARTCRAFT_RELEASE_FEED};
 use artcraft_launcher_core::feed::{Feed, FeedAnswer};
 use artcraft_launcher_core::platform::{Arch, Os, Platform, pick_asset};
 use artcraft_launcher_core::protocol::{
@@ -146,11 +146,11 @@ impl NativeBackend {
         backend
     }
 
-    /// Shows the saved answers from the last run straight away, before any network request: the
-    /// release feed's where they're still fresh, GitHub's otherwise.
+    /// Shows saved answers before any network request. A personal fork ignores the official
+    /// feed cache so upstream notices and releases cannot replace its GitHub answers.
     fn replay_cache(&self) {
         let pre = self.options().prereleases;
-        let feed = if pre { None } else { load_feed(&self.paths) };
+        let feed = if pre || !USE_ARTCRAFT_RELEASE_FEED { None } else { load_feed(&self.paths) };
         let now = crate::now();
         for app in &SUITE {
             let answer = match feed.as_ref().map(|f| f.answer(app, now)) {
@@ -207,9 +207,8 @@ impl NativeBackend {
         });
     }
 
-    /// Looks up the latest releases: ArtCraft's release feed first (one request for every app),
-    /// GitHub for anything the feed can't vouch for (apps it doesn't list, entries more than a
-    /// day old, or no answer at all), at most once an hour per app unless `force`.
+    /// Looks up the latest releases from each catalog repository. The official feed is used
+    /// only when enabled for this build; a personal fork queries GitHub directly.
     fn check(&self, force: bool) {
         let (Some(source), Some(http)) = (self.source.clone(), self.http.clone()) else {
             for app in &SUITE {
@@ -236,9 +235,9 @@ impl NativeBackend {
             let (feed, fallback) = if let Some(base) = &mirror {
                 // A local mirror answers for everything: GitHub is never asked.
                 (local_feed(&http, base), Fallback { trust_feed: true, github_every: GITHUB_FALLBACK_EVERY })
-            } else if pre {
-                // The feed serves stable releases only; with pre-releases on, GitHub decides.
-                (None, Fallback { trust_feed: false, github_every: EARLY_GITHUB_EVERY })
+            } else if pre || !USE_ARTCRAFT_RELEASE_FEED {
+                let github_every = if pre || !shared.loaded.load(Ordering::SeqCst) { EARLY_GITHUB_EVERY } else { GITHUB_FALLBACK_EVERY };
+                (None, Fallback { trust_feed: false, github_every })
             } else {
                 feed_and_fallback(&http, &paths, &shared)
             };

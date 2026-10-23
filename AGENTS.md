@@ -1,5 +1,16 @@
 # AGENTS.md: guide for AI agents and contributors
 
+## Personal fork policy
+
+This is ElliottHitch's personal fork. The launcher and the thirteen existing catalog apps use
+public releases from `ElliottHitch/<same repository name>`. This is the authorized exception to
+the upstream `storytold/` source policy below. Keep exact repository validation and checksum
+verification. Do not enable arbitrary download sources or restore the official release feed.
+
+Keep `origin` pointed at the personal fork and `upstream` at the original `storytold/` repository.
+Import upstream changes on a review branch when requested. Preserve personal changes, review
+conflicts, and publish packages separately. Follow `docs/personal-forks.md` for this workflow.
+
 ArtCraft Launcher installs, updates and launches the **Craft App Suite** (PhotoCraft, LightCraft,
 FilmCraft, DesignCraft, VectorCraft, PdfCraft, EffectCraft, WordCraft, DeckCraft, GridCraft,
 CADCraft, SoundCraft, FigCraft). It is written in **Rust only** (no JavaScript or TypeScript): the desktop

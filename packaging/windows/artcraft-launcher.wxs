@@ -45,7 +45,7 @@
     <Icon Id="ArtCraftLauncherIcon.exe" SourceFile="$(var.IconPath)" />
     <Property Id="ARPPRODUCTICON" Value="ArtCraftLauncherIcon.exe" />
     <Property Id="ARPURLINFOABOUT" Value="https://getartcraft.com/apps" />
-    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/storytold/craft-launcher/releases" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/ElliottHitch/craft-launcher/releases" />
     <Property Id="ARPHELPLINK" Value="https://discord.gg/artcraft" />
 
     <StandardDirectory Id="LocalAppDataFolder">

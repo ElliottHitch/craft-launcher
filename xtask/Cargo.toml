@@ -9,4 +9,5 @@ publish = false
 workspace = true
 
 [dependencies]
+artcraft-launcher-core = { workspace = true }
 jiff = { workspace = true }
