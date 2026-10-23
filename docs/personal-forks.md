@@ -107,7 +107,8 @@ The old GitHub-hosted personal release workflows are retired.
 
 Use a numeric `major.minor.patch` version that is greater than the installed version and every
 earlier personal release of that app. Set it in the app's workspace `Cargo.toml`. For the
-launcher, use `cargo xtask version set X.Y.Z`. Keep the manifest version, release tag, and asset
+launcher, use `cargo xtask version set X.Y.Z`. Update `Cargo.lock` in the same commit, including
+workspace tools such as `xtask`. Keep the manifest version, release tag, and asset
 version consistent. SemVer build metadata such as `+elliott.1` does not make a version newer,
 and Windows MSI upgrades also need an increasing numeric version. The Windows helper limits
 major and minor to 255 and patch to 65535. Existing release versions are not overwritten.
