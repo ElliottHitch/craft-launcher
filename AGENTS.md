@@ -11,6 +11,11 @@ Keep `origin` pointed at the personal fork and `upstream` at the original `story
 Import upstream changes on a review branch when requested. Preserve personal changes, review
 conflicts, and publish packages separately. Follow `docs/personal-forks.md` for this workflow.
 
+Keep GitHub Actions disabled in the fourteen Craft forks, including after upstream imports.
+Personal packages are built and published through `ElliottHitch/local-releases` on the local
+Windows worker using each repository's `local-release.json`. Source reviews and dependency
+scans run when requested; do not restore inherited CI or mandatory scan gates.
+
 ArtCraft Launcher installs, updates and launches the **Craft App Suite** (PhotoCraft, LightCraft,
 FilmCraft, DesignCraft, VectorCraft, PdfCraft, EffectCraft, WordCraft, DeckCraft, GridCraft,
 CADCraft, SoundCraft, FigCraft). It is written in **Rust only** (no JavaScript or TypeScript): the desktop

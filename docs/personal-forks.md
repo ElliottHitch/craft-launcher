@@ -79,6 +79,9 @@ known advisories; it does not replace source review.
 
 Inherited CI, external security-service, and release workflows are disabled in all fourteen
 forks. Their source files remain available for reference when merging upstream updates.
+GitHub Actions is also disabled for these fourteen repositories, so importing a new upstream
+workflow cannot start hosted jobs. Keep Actions enabled only in the private release hub for
+this suite; it runs the manual builds on the local worker.
 The local release build verifies packages and their checksums. Source reviews and dependency
 scans run when you request them, separately from packaging. Release notes record the scope of
 the source review; a successful build does not imply a security audit.
