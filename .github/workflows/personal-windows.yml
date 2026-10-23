@@ -147,31 +147,6 @@ jobs:
           rustup default stable
           if ($LASTEXITCODE -ne 0) { throw 'Could not select stable Rust.' }
 
-      - name: Install the pinned dependency scanner
-        working-directory: ${{ runner.temp }}
-        run: |
-          cargo +stable install cargo-audit --version 0.22.2 --locked --root "$env:RUNNER_TEMP/personal-tools"
-          if ($LASTEXITCODE -ne 0) { throw 'cargo-audit installation failed.' }
-
-      - name: Scan the committed lockfile against RustSec
-        id: audit
-        working-directory: ${{ runner.temp }}
-        run: |
-          $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE/dist/security" | Out-Null
-          & "$env:RUNNER_TEMP/personal-tools/bin/cargo-audit.exe" audit --file "$env:GITHUB_WORKSPACE/Cargo.lock" --json > "$env:GITHUB_WORKSPACE/dist/security/cargo-audit.json"
-          $auditExit = $LASTEXITCODE
-          if ($auditExit -ne 0) { throw "cargo-audit failed with exit code $auditExit. Review the security report before releasing." }
-
-      - name: Save the dependency scan report
-        if: always() && steps.audit.outcome != 'skipped' && hashFiles('dist/security/cargo-audit.json') != ''
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: personal-security-${{ github.run_id }}-${{ github.run_attempt }}
-          path: dist/security/cargo-audit.json
-          if-no-files-found: error
-          retention-days: 30
-
       - name: Check out the upstream suite's pinned fonts
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -232,7 +207,6 @@ jobs:
             $file = Get-Item -LiteralPath (Join-Path $env:DIST $name)
             if ($file.Length -eq 0) { throw "Empty release asset $name." }
           }
-          Copy-Item -LiteralPath dist/security/cargo-audit.json -Destination (Join-Path $env:DIST 'cargo-audit.json')
           $rustc = @(rustc -Vv)
           if ($LASTEXITCODE -ne 0) { throw 'Could not record the Rust compiler.' }
           @{
@@ -248,12 +222,10 @@ jobs:
             cargo_lock_sha256 = (Get-FileHash -LiteralPath Cargo.lock -Algorithm SHA256).Hash.ToLowerInvariant()
             craft_fonts_sha = 'bfcbf714e45a3ea8e98f88ab2b7971372a576414'
             craft_i18n_sha = $env:CRAFT_I18N_SHA
-            dependency_scanner = 'cargo-audit 0.22.2'
-            scan_scope = 'Committed Cargo.lock against known RustSec advisories. Source review and native dependency review are separate.'
             review_note = $env:REVIEW_NOTE
             signed = $false
           } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $env:DIST 'personal-build.json') -Encoding utf8NoBOM
-          $names += 'cargo-audit.json', 'personal-build.json'
+          $names += 'personal-build.json'
           $sums = foreach ($name in $names | Sort-Object) {
             $hash = (Get-FileHash -LiteralPath (Join-Path $env:DIST $name) -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $name"
@@ -267,7 +239,6 @@ jobs:
           path: |
             dist/release/${{ inputs.app-id }}-${{ inputs.version }}-windows-x64.msi
             dist/release/${{ inputs.app-id }}-${{ inputs.version }}-windows-x64-portable.zip
-            dist/release/cargo-audit.json
             dist/release/personal-build.json
             dist/release/SHA256SUMS.txt
           if-no-files-found: error
@@ -322,7 +293,7 @@ jobs:
               }
             }
           }
-          $files = @("$env:APP_ID-$env:VERSION-windows-x64.msi", "$env:APP_ID-$env:VERSION-windows-x64-portable.zip", 'cargo-audit.json', 'personal-build.json')
+          $files = @("$env:APP_ID-$env:VERSION-windows-x64.msi", "$env:APP_ID-$env:VERSION-windows-x64-portable.zip", 'personal-build.json')
           $expected = foreach ($name in $files | Sort-Object) {
             $hash = (Get-FileHash -LiteralPath (Join-Path release-assets $name) -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $name"
@@ -338,9 +309,7 @@ jobs:
             'Source review record:'
             $env:REVIEW_NOTE
             ''
-            'cargo-audit 0.22.2 completed against the committed Cargo.lock. Its report is attached.'
-            'The dependency scan does not replace source review or inspect native libraries.'
-            'Review the source, scan report, and packages before manually publishing this draft as the latest release.'
+            'Review the source and packages before manually publishing this draft as the latest release. No automated security scan is included in this build.'
           ) -join "`n"
           $payload = @{
             tag_name = $tag; target_commitish = $env:SOURCE_SHA

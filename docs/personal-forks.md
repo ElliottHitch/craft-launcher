@@ -5,6 +5,16 @@ repository names. Each personal repository keeps `storytold/<same repository nam
 GitHub forks keep the shared history, so you can merge selected upstream updates while preserving
 your own commits. You still need to resolve conflicts and review upstream changes.
 
+## Setup status on 2026-10-23
+
+The launcher and nine app forks are published. SoundCraft, DeckCraft, CADCraft, and GridCraft
+are prepared locally under `repos/`, but GitHub is rejecting creation of their personal forks
+with `was submitted too quickly`, including through the authenticated CLI. Their personal
+release workflows and update links are ready to publish after that restriction clears.
+
+All thirteen local app checkouts have the personal `origin` and original `upstream` remotes.
+No personal binary releases have been built or published yet.
+
 ## Prepare local checkouts
 
 From the ArtCraft Launcher checkout, run:
@@ -61,14 +71,14 @@ Review both the incoming upstream diff and the final merge, especially network a
 operations, process execution, install scripts, dependencies, and workflow permissions. Check
 that the resulting app still includes the personal patches you intend to keep.
 
-The personal Windows workflow runs `cargo-audit` against the reviewed commit's `Cargo.lock`
-before packaging. Inspect dependency findings and review the code separately. Dependency
-advisories do not cover application logic or every vulnerable dependency.
+Ask Codex to review the app and patch the findings you accept. Run dependency scans such as
+`cargo audit` when you request them, separately from packaging. A dependency scanner checks
+known advisories; it does not replace source review.
 
-Run any other security scans configured for your fork and inspect their findings.
-Configure any external analysis service for your own repository and credentials. Inherited
-Sonar configuration can still point at upstream projects or require unavailable secrets.
-A green scan reports what that scanner found. It does not establish that an update is safe.
+Inherited CI, external security-service, and release workflows are disabled in the configured
+personal forks. Their source files remain available. Only the personal manual Windows build
+is enabled; it runs no automated tests or security scans. The `review-note` input records your
+own review of the chosen source commit.
 
 Keep publishing manual. Do not enable automatic upstream merges or publish packages directly
 from an upstream update notification.
@@ -77,7 +87,8 @@ from an upstream update notification.
 
 The [personal Windows workflow](../.github/workflows/personal-windows.yml) builds the launcher.
 The [caller template](templates/personal-release.yml) connects an app fork to that workflow.
-Pin the reusable workflow to a reviewed full commit SHA before enabling the caller.
+The installed callers pin the reusable workflow to a full commit SHA. Update that pin only
+after reviewing changes to the build workflow.
 An app may need its own Windows build dependencies or packaging adjustments before its first
 personal release. The workflow accepts an optional reviewed
 `packaging/windows/personal-prepare.ps1` in that app for those dependencies.
