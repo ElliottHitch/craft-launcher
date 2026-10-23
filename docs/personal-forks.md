@@ -7,12 +7,15 @@ your own commits. You still need to resolve conflicts and review upstream change
 
 ## Setup status on 2026-10-23
 
-The launcher and all thirteen app forks are published under `ElliottHitch`. Each app has its
-personal manual release workflow and update links. GitHub's temporary fork-creation restriction
-cleared during setup.
+The launcher and all thirteen app forks are published under `ElliottHitch`. Each repository has
+a local Windows release recipe and personal update links. All thirteen local app checkouts have
+the personal `origin` and original `upstream` remotes.
 
-All thirteen local app checkouts have the personal `origin` and original `upstream` remotes.
-No personal binary releases have been built or published yet.
+The private `local-releases` hub builds, verifies, and publishes packages on Elliott's PC.
+The installed ArtCraft Launcher 0.7.0 comes from the personal release and reads the personal
+app releases. Its Update buttons install published packages; they do not merge Git changes or
+build uncommitted source edits. Import upstream changes, review and commit personal patches,
+then request a new local release when ready.
 
 ## Prepare local checkouts
 
