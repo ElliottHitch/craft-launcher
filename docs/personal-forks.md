@@ -94,8 +94,9 @@ release. The hub keeps an incomplete upload as a draft; failed builds are not pu
 
 Each fork's `local-release.json` declares its packaging script and exact output filenames.
 App scripts pin the launcher's shared Windows preparation helper to a commit and SHA-256.
-The helper uses each app's existing packager, pinned fonts and translations, WiX 5.0.2, Rust,
-MSVC, and the Windows SDK. Build caches are shared through `CRAFT_BUILD_CACHE` on the PC.
+The helper uses each app's existing packager, pinned fonts and translations, WiX 5.0.2,
+Rust 1.95.0, MSVC, and the Windows SDK. The recipe pins Rust so a clean worker checkout does
+not inherit an older system default. Build caches are shared through `CRAFT_BUILD_CACHE`.
 The old GitHub-hosted personal release workflows are retired.
 
 Use a numeric `major.minor.patch` version that is greater than the installed version and every
