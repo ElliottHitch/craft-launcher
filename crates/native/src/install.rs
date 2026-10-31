@@ -1195,15 +1195,14 @@ pub mod macos {
         Ok(user)
     }
 
-    /// The Apple Developer team that signs every Craft App and ArtCraft Launcher (Learning
-    /// Machines LLC): the macOS side of the Windows publisher check.
+    /// The upstream Apple Developer team, retained as the fallback publisher pin.
     pub const TEAM_ID: &str = "DJ6XS33FX8";
 
     /// What a new copy must prove before it replaces anything. The checksum shows the download is
     /// the file the release lists; these show the app inside is the one the release promises.
     pub struct Expect<'a> {
-        /// The team whose Developer ID signature the bundle must carry. `None` only in tests,
-        /// which build unsigned bundles.
+        /// The fallback Developer ID team. Catalogued personal forks instead require signature
+        /// integrity. `None` only in tests, which build unsigned bundles.
         pub team: Option<&'a str>,
         /// The release's version, which the bundle must report. `None` when the tag isn't one.
         pub version: Option<&'a Version>,
@@ -1308,18 +1307,28 @@ pub mod macos {
             .map_err(|reason| format!("couldn't copy the app: {reason}"))?;
         let checked = crate::detect::macos::read_bundle(app, &staged)
             .ok_or_else(|| "the copied app is incomplete".to_string())
-            .and_then(|found| check(&staged, &found, expect));
+            .and_then(|found| check(app, &staged, &found, expect));
         checked?;
         swap_into_place(&staged, &dest)?;
         Ok(dest)
     }
 
     /// Checks a copied bundle against what its release promises, before it replaces anything.
-    fn check(bundle: &Path, found: &Installed, expect: &Expect<'_>) -> Result<(), String> {
-        if let Some(team) = expect.team
-            && !signed_by(bundle, team)
-        {
-            return Err("the app isn't signed by its developer, so it wasn't installed".into());
+    fn check(app: &CraftApp, bundle: &Path, found: &Installed, expect: &Expect<'_>) -> Result<(), String> {
+        if let Some(team) = expect.team {
+            let personal = team == TEAM_ID
+                && app.repo.starts_with("ElliottHitch/")
+                && (artcraft_launcher_core::SUITE.contains(app) || *app == artcraft_launcher_core::catalog::LAUNCHER);
+            let valid = if personal {
+                bundle
+                    .to_str()
+                    .is_some_and(|path| process::capture(CODESIGN, &["--verify", "--strict", "--deep", path], Duration::from_secs(120)).is_some())
+            } else {
+                signed_by(bundle, team)
+            };
+            if !valid {
+                return Err("the app isn't signed by its developer, so it wasn't installed".into());
+            }
         }
         if let Some(want) = expect.version
             && !found.version.as_ref().is_some_and(|v| same_release(v, want))
