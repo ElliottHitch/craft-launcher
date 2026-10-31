@@ -1,6 +1,6 @@
 //! Local checkouts for the personal forks. Upstream changes are fetched, never merged.
 
-use artcraft_launcher_core::catalog::{CraftApp, LAUNCHER, SUITE};
+use artcraft_launcher_core::catalog::{AppKind, CraftApp, LAUNCHER, SUITE};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -51,7 +51,8 @@ pub fn run(args: &[&str]) -> Result<(), String> {
     if !matches!(*command, "list" | "status" | "clone" | "fetch") || rest.len() > 1 {
         return Err(USAGE.into());
     }
-    let all = std::iter::once(&LAUNCHER).chain(SUITE.iter()).map(Fork::new).collect::<Result<Vec<_>, _>>()?;
+    // Community apps install from their own developers' repositories and have no personal fork.
+    let all = std::iter::once(&LAUNCHER).chain(SUITE.iter().filter(|app| app.kind == AppKind::Official)).map(Fork::new).collect::<Result<Vec<_>, _>>()?;
     let selected: Vec<_> = all.iter().filter(|fork| rest.first().is_none_or(|app| *app == fork.app.id || *app == fork.repo)).collect();
     if selected.is_empty() {
         return Err(format!("unknown app `{}`; use `cargo xtask forks list`", rest.first().copied().unwrap_or_default()));
