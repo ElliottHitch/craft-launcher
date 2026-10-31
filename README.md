@@ -5,6 +5,7 @@
 - New `cargo xtask forks` command to list, clone, fetch and check fork checkouts
 - Windows release packages built locally and published to this fork
 - Launcher update link points to this fork's releases
+- macOS signature check accepts this fork's own app builds
 
 > This personal fork installs releases from **ElliottHitch's Craft App Suite forks**.
 > See [the personal fork workflow](docs/personal-forks.md) for checkouts, upstream updates,
