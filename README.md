@@ -1,3 +1,11 @@
+## Changes in this fork
+
+- Installs and updates every Craft app from these personal forks instead of upstream
+- Checks each fork's GitHub releases directly instead of the official release feed
+- New `cargo xtask forks` command to list, clone, fetch and check fork checkouts
+- Windows release packages built locally and published to this fork
+- Launcher update link points to this fork's releases
+
 > This personal fork installs releases from **ElliottHitch's Craft App Suite forks**.
 > See [the personal fork workflow](docs/personal-forks.md) for checkouts, upstream updates,
 > security review, and publishing. Downloads require a published personal release.
