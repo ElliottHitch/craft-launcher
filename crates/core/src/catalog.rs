@@ -1,4 +1,4 @@
-//! The Craft App Suite: the fourteen apps the launcher knows about.
+//! The Craft App Suite: the thirteen apps the launcher knows about.
 //!
 //! The list is data so a later version can fetch it from an API; [`SUITE`] is the built-in copy.
 //!
@@ -35,13 +35,13 @@ pub struct CraftApp {
     /// Older display names its installers registered (PdfCraft's MSI said PrintCraft until 0.2.1).
     pub former_names: &'static [&'static str],
     pub kind: AppKind,
-    /// Who publishes it, as the card's byline shows it (`ArtCraft`, `Tangency Labs`).
+    /// Who publishes it, as the card's byline shows it.
     pub publisher: &'static str,
     /// The publisher its Windows installer names, when it isn't ArtCraft's (`Learning Machines LLC`).
     pub msi_publisher: Option<&'static str>,
     /// The bundle id when it isn't `ai.storyteller.<id>` (a community app brings its own).
     pub bundle: Option<&'static str>,
-    /// Older bundle ids its Flatpak shipped under (SolidCraft was `ai.storyteller.solidcraft`).
+    /// Older bundle ids its Flatpak shipped under.
     pub former_bundles: &'static [&'static str],
     /// Its website, when it isn't a page on getartcraft.com (a community app has its own).
     pub site: Option<&'static str>,
@@ -122,8 +122,8 @@ const fn app(
     }
 }
 
-/// The Craft App Suite, in display order matching getartcraft.com, then the community apps:
-pub const SUITE: [CraftApp; 14] = [
+/// The Craft App Suite, in display order matching getartcraft.com.
+pub const SUITE: [CraftApp; 13] = [
     app("photocraft", "PhotoCraft", "Image editing", [[0x2f, 0x7b, 0xf5], [0x1a, 0x5b, 0xc4], [0x7f, 0xb0, 0xff]], "ElliottHitch/photocraft"),
     app("vectorcraft", "VectorCraft", "Vector illustration", [[0xe8, 0x57, 0x3f], [0xb8, 0x3a, 0x24], [0xff, 0x8a, 0x70]], "ElliottHitch/vectorcraft"),
     app(
@@ -195,23 +195,6 @@ pub const SUITE: [CraftApp; 14] = [
         "ElliottHitch/cadcraft",
     ),
     app("gridcraft", "GridCraft", "Spreadsheets and data", [[0x1f, 0x9d, 0x55], [0x12, 0x70, 0x3a], [0x4f, 0xd6, 0x8a]], "ElliottHitch/gridcraft"),
-    CraftApp {
-        kind: AppKind::Community,
-        publisher: "Tangency Labs",
-        msi_publisher: Some("SolidCraft contributors"),
-        bundle: Some("io.tangencylabs.solidcraft"),
-        former_bundles: &["ai.storyteller.solidcraft", "ai.storyteller.solvecraft"],
-        site: Some("https://solidcraft.io"),
-        // Signed by its own developer's team, not ArtCraft's (since 0.27, per its README).
-        mac_team: Some("G5QA5U5X2S"),
-        ..app(
-            "solidcraft",
-            "SolidCraft",
-            "Parametric 3D CAD",
-            [[0x46, 0xa1, 0xfb], [0x16, 0x53, 0xae], [0x8c, 0xc4, 0xff]],
-            "tangency-labs/solidcraft",
-        )
-    },
 ];
 
 /// The Apple Developer team that signs every official Craft App and ArtCraft Launcher (Learning
@@ -220,8 +203,7 @@ pub const ARTCRAFT_TEAM_ID: &str = "DJ6XS33FX8";
 
 /// ArtCraft's website.
 pub const WEBSITE_URL: &str = "https://getartcraft.com";
-/// The GitHub account every official Craft App's repository lives under. The release feed can
-/// only move an app within it; a community app installs from its own repo, pinned in [`SUITE`].
+/// The GitHub account every Craft App's repository lives under.
 pub const GITHUB_OWNER: &str = "ElliottHitch";
 /// The personal forks on GitHub.
 pub const GITHUB_URL: &str = "https://github.com/ElliottHitch";
@@ -271,7 +253,6 @@ pub fn app_icon_png(id: &str) -> Option<&'static [u8]> {
         "wordcraft" => include_bytes!("../../../assets/app-icons/wordcraft.png"),
         "deckcraft" => include_bytes!("../../../assets/app-icons/deckcraft.png"),
         "gridcraft" => include_bytes!("../../../assets/app-icons/gridcraft.png"),
-        "solidcraft" => include_bytes!("../../../assets/app-icons/solidcraft.png"),
         "cadcraft" => include_bytes!("../../../assets/app-icons/cadcraft.png"),
         "soundcraft" => include_bytes!("../../../assets/app-icons/soundcraft.png"),
         "figcraft" => include_bytes!("../../../assets/app-icons/figcraft.png"),

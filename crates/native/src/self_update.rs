@@ -14,14 +14,17 @@ use crate::paths::Paths;
 
 pub use craft_update::self_update::{FINISH_FLAG, Install, PRETEND_VAR, is_self_updating};
 
+const PERSONAL_LAUNCHER: craft_update::App =
+    craft_update::App { repo: artcraft_launcher_core::catalog::LAUNCHER_REPO, ..craft_update::suite::LAUNCHER };
+
 /// The version this launcher counts as (see [`PRETEND_VAR`]).
 pub fn current_version() -> Option<Version> {
-    craft_update::self_update::current_version(&craft_update::suite::LAUNCHER, env!("CARGO_PKG_VERSION"))
+    craft_update::self_update::current_version(&PERSONAL_LAUNCHER, env!("CARGO_PKG_VERSION"))
 }
 
 /// How this copy is installed, if it's one the launcher knows how to replace.
 pub fn current() -> Option<Install> {
-    craft_update::self_update::current(&craft_update::suite::LAUNCHER)
+    craft_update::self_update::current(&PERSONAL_LAUNCHER)
 }
 
 fn to_update_paths(paths: &Paths) -> craft_update::Paths {
@@ -103,8 +106,8 @@ pub fn update(
             craft_update::JobPhase::Removing => JobPhase::Removing,
         });
     };
-    craft_update::self_update::update(
-        &craft_update::suite::LAUNCHER,
+    craft_update::self_update::update_with_policy(
+        &PERSONAL_LAUNCHER,
         install,
         &update_release,
         update_platform,
@@ -114,12 +117,13 @@ pub fn update(
         &mut update_phase,
         last,
         Some(env!("CARGO_PKG_VERSION")),
+        craft_update::self_update::WindowsUpdatePolicy::ReleaseChecksum,
     )
 }
 
 /// Finishes an update when this program was started as the update helper.
 pub fn finish(args: &[OsString]) -> Option<Result<(), String>> {
-    craft_update::self_update::finish(&craft_update::suite::LAUNCHER, args)
+    craft_update::self_update::finish_with_policy(&PERSONAL_LAUNCHER, args, craft_update::self_update::WindowsUpdatePolicy::ReleaseChecksum)
 }
 
 #[cfg(test)]

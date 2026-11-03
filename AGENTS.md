@@ -18,8 +18,7 @@ scans run when requested; do not restore inherited CI or mandatory scan gates.
 
 ArtCraft Launcher installs, updates and launches the **Craft App Suite** (PhotoCraft, LightCraft,
 FilmCraft, DesignCraft, VectorCraft, PdfCraft, EffectCraft, WordCraft, DeckCraft, GridCraft,
-CADCraft, SoundCraft, FigCraft), plus approved **community apps** made outside ArtCraft and labelled
-as such (today SolidCraft, by Tangency Labs). It is written in **Rust only** (no JavaScript or TypeScript): the desktop
+CADCraft, SoundCraft, FigCraft). It is written in **Rust only** (no JavaScript or TypeScript): the desktop
 app is native egui/eframe, and the web build is the same Rust compiled to WebAssembly (trunk +
 wasm-bindgen). **No Tauri, Electron or webview shells**, ever.
 
@@ -70,29 +69,23 @@ settings file must produce an error the user can act on, never a panic.
 
 ### Installing other people's software safely
 
-- Download only from `https://github.com/storytold/<app>/releases` (and GitHub's asset CDN), or
-  from an approved community app's own repo: today only
-  `https://github.com/tangency-labs/solidcraft/releases` (SolidCraft, approved by the project
-  owner on 2026-10-28). A community app's repo is pinned in the catalog (`CraftApp::repo`,
-  `AppKind::Community`): the release feed can move an app within `storytold/`, never to another
-  owner. The one other exception is a developer's own loopback mirror (`ARTCRAFT_LAUNCHER_DOWNLOAD_BASE`,
-  `cargo xtask local`); keep it loopback-only and behind the `local-mirror` cargo feature, which
-  release builds never enable.
+- Download only from `https://github.com/ElliottHitch/<app>/releases` (and GitHub's asset CDN),
+  as specified by the personal fork policy above. The one exception is a developer's own loopback
+  mirror (`ARTCRAFT_LAUNCHER_DOWNLOAD_BASE`, `cargo xtask local`); keep it loopback-only and
+  behind the `local-mirror` cargo feature, which release builds never enable.
 - Verify each download against the release's `SHA256SUMS.txt` before running or installing it.
-  Community apps get the same check. On macOS the launcher also requires the Developer ID signature
-  of the app's own team (`CraftApp::mac_team`: ArtCraft's for official apps, SolidCraft's for
-  SolidCraft); an app with none (`mac_team = None`) is not installed there, only opened if present.
+  On macOS the launcher also requires the Developer ID signature of the app's recorded team
+  (`CraftApp::mac_team`); an app with none (`mac_team = None`) is not installed there, only opened if present.
 - The details drawer's pictures are the one other download: JPEGs only, from a pinned tag of
   `https://raw.githubusercontent.com/storytold/craft-launcher-assets/` (`core::details`),
   capped at 2 MB each, cached, and never run. Pictures are not bundled in this repo.
 - Never run an installer with elevated rights silently; tell the user what is about to happen.
 - Never delete a user's files outside what the launcher itself installed.
 - **Agents never land or approve a third-party app.** A change that adds a catalog row, download
-  source or install path for an app whose repo is not under `storytold/` and isn't one of the
-  approved community apps above, or that loosens the rules above to allow one, is a maintainer's
-  call alone. An agent reviewing it flags it at the
-  top of its review (who owns the repo, its age and history, whether the builds are signed) and
-  stops there: no merge, no approval, no fixes pushed to the PR.
+  source or install path for an app outside the authorized personal forks, or that loosens the
+  rules above to allow one, is a maintainer's call alone. An agent reviewing it flags it at the top
+  of its review (who owns the repo, its age and history, whether the builds are signed) and stops
+  there: no merge, no approval, no fixes pushed to the PR.
 
 ### Look and feel
 

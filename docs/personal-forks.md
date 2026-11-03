@@ -125,10 +125,10 @@ accept a release. Linux recipes run in Docker containers; Docker must be running
 Windows Craft recipes do not produce macOS, Linux, FreeBSD, or other CPU packages. macOS
 packaging requires a Mac worker.
 
-The Windows launcher requires matching Authenticode signatures for its own self-update.
-Unsigned personal launcher builds therefore need manual reinstallation. Installing and updating
-the suite's app packages is a separate path. Keep the self-update signature check intact; add
-your own consistent signing setup before enabling unattended launcher replacement.
+The Windows launcher checks its own updates against `SHA256SUMS.txt` from the personal launcher
+release. It does not require an Authenticode signature. Install the first launcher release with
+this change manually: older unsigned launcher builds cannot replace themselves. A checksum checks
+the downloaded bytes against the release, but it does not provide a separate publisher signature.
 
 The launcher installs and updates only from the catalog's `ElliottHitch` releases. Until a
 personal release is published with the expected asset names and checksums, that app has no
