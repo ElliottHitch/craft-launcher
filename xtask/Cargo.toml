@@ -12,3 +12,6 @@ workspace = true
 artcraft-launcher-core = { workspace = true }
 jiff = { workspace = true }
 semver = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

@@ -109,6 +109,12 @@
 	Apps on this computer	Aplikace v tomto počítači
 	Installed apps with a newer version	Nainstalované aplikace s novější verzí
 	Apps you can install	Aplikace, které lze nainstalovat
+	Pin to top	Připnout nahoru
+	Unpin	Odepnout
+	Pinned	Připnuté
+	Reorder {name}	Změnit pořadí: {name}
+	Move up	Posunout nahoru
+	Move down	Posunout dolů
 	Hide App	Skrýt aplikaci
 	Unhide App	Zobrazit aplikaci
 	Hidden Apps	Skryté aplikace
@@ -134,6 +140,7 @@
 	Update cancelled	Aktualizace zrušena
 	Uninstall cancelled	Odinstalace zrušena
 	Retry install	Zkusit instalaci znovu
+	Retry update	Zkusit aktualizaci znovu
 	Retry update to {version}	Zkusit aktualizaci na {version} znovu
 	The download is still here. It's checked again, then installed.	Stažený soubor je stále k dispozici. Znovu se ověří a poté nainstaluje.
 	Waiting for another app…	Čekání na jinou aplikaci…

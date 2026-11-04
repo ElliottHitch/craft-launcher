@@ -89,7 +89,16 @@ mod tests {
     use super::*;
 
     fn solidcraft() -> &'static CraftApp {
-        CraftApp::by_id("solidcraft").unwrap()
+        const APP: CraftApp = CraftApp {
+            id: "solidcraft",
+            name: "SolidCraft",
+            repo: "tangency-labs/solidcraft",
+            bundle: Some("io.tangencylabs.solidcraft"),
+            former_bundles: &["ai.storyteller.solidcraft", "ai.storyteller.solvecraft"],
+            mac_team: Some("G5QA5U5X2S"),
+            ..artcraft_launcher_core::SUITE[0]
+        };
+        &APP
     }
 
     // Verbatim stdout captured by the real macOS --raw assessment (receipt 653b8b).

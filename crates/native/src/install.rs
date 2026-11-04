@@ -2095,7 +2095,7 @@ pub mod windows {
         if installs.is_empty() {
             return Err(format!("{} isn't registered with the Windows Installer", app.name));
         }
-        let removals = installs.iter().map(|m| msi_downgrade::removal(&m.product_code)).collect::<Result<Vec<_>, _>>()?;
+        let removals = msi_downgrade::elevated_removals(app.name, installs.iter().map(|m| (m.product_code.as_str(), m.scope)))?;
         let script = msi_downgrade::script(
             msi_batch::text(&msiexec())?,
             &removals,
@@ -3210,12 +3210,10 @@ mod tests {
 
     #[test]
     fn a_macos_build_installs_only_when_its_team_is_known() {
-        let sc = artcraft_launcher_core::CraftApp::by_id("solidcraft").unwrap();
-        assert_eq!(choose_kinds_with(sc, None, None, &[], &[PackageKind::Dmg], false), [PackageKind::Dmg]);
-        let unsigned = artcraft_launcher_core::CraftApp { mac_team: None, ..*sc };
-        assert_eq!(choose_kinds_with(&unsigned, None, None, &[], &[PackageKind::Dmg], false), Vec::<PackageKind>::new());
         let photo = artcraft_launcher_core::CraftApp::by_id("photocraft").unwrap();
         assert_eq!(choose_kinds_with(photo, None, None, &[], &[PackageKind::Dmg], false), [PackageKind::Dmg]);
+        let unsigned = artcraft_launcher_core::CraftApp { mac_team: None, ..*photo };
+        assert_eq!(choose_kinds_with(&unsigned, None, None, &[], &[PackageKind::Dmg], false), Vec::<PackageKind>::new());
     }
 
     #[cfg(target_os = "linux")]
@@ -3223,7 +3221,11 @@ mod tests {
     fn only_an_apps_own_older_flatpak_id_is_retired() {
         use super::linux::former_flatpak;
         let flatpak = |id: &str| Installed { version: None, source: InstallSource::Flatpak, location: id.into(), package: Some(id.into()) };
-        let sc = artcraft_launcher_core::CraftApp::by_id("solidcraft").unwrap();
+        let sc = &artcraft_launcher_core::CraftApp {
+            bundle: Some("io.tangencylabs.solidcraft"),
+            former_bundles: &["ai.storyteller.solidcraft", "ai.storyteller.solvecraft"],
+            ..artcraft_launcher_core::SUITE[0]
+        };
         let old = flatpak("ai.storyteller.solvecraft");
         assert_eq!(former_flatpak(sc, Some(&old)), Some("ai.storyteller.solvecraft"));
         assert_eq!(former_flatpak(sc, Some(&flatpak("io.tangencylabs.solidcraft"))), None);

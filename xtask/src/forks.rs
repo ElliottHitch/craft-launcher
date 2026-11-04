@@ -52,7 +52,8 @@ pub fn run(args: &[&str]) -> Result<(), String> {
         return Err(USAGE.into());
     }
     // Community apps install from their own developers' repositories and have no personal fork.
-    let all = std::iter::once(&LAUNCHER).chain(SUITE.iter().filter(|app| app.kind == AppKind::Official)).map(Fork::new).collect::<Result<Vec<_>, _>>()?;
+    let all =
+        std::iter::once(&LAUNCHER).chain(SUITE.iter().filter(|app| app.kind == AppKind::Official)).map(Fork::new).collect::<Result<Vec<_>, _>>()?;
     let selected: Vec<_> = all.iter().filter(|fork| rest.first().is_none_or(|app| *app == fork.app.id || *app == fork.repo)).collect();
     if selected.is_empty() {
         return Err(format!("unknown app `{}`; use `cargo xtask forks list`", rest.first().copied().unwrap_or_default()));

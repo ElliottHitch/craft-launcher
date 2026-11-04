@@ -123,7 +123,11 @@ mod tests {
 
     #[test]
     fn solidcraft_flatpak_is_found_under_its_older_ids_current_first() {
-        let sc = CraftApp::by_id("solidcraft").unwrap();
+        let sc = &CraftApp {
+            bundle: Some("io.tangencylabs.solidcraft"),
+            former_bundles: &["ai.storyteller.solidcraft", "ai.storyteller.solvecraft"],
+            ..artcraft_launcher_core::SUITE[0]
+        };
         let old = pkgs(InstallSource::Flatpak, parse_flatpak_list("ai.storyteller.solvecraft\t0.7.0\n"));
         assert_eq!(find(sc, &old, &[InstallSource::Flatpak]).map(|p| p.name.as_str()), Some("ai.storyteller.solvecraft"));
         let both = pkgs(InstallSource::Flatpak, parse_flatpak_list("ai.storyteller.solidcraft\t0.8.0\nio.tangencylabs.solidcraft\t0.25.1\n"));
@@ -135,7 +139,11 @@ mod tests {
 
     #[test]
     fn a_user_flatpak_beats_a_system_one_under_any_id() {
-        let sc = CraftApp::by_id("solidcraft").unwrap();
+        let sc = &CraftApp {
+            bundle: Some("io.tangencylabs.solidcraft"),
+            former_bundles: &["ai.storyteller.solidcraft", "ai.storyteller.solvecraft"],
+            ..artcraft_launcher_core::SUITE[0]
+        };
         let mut installed = pkgs(InstallSource::Flatpak, parse_flatpak_list("io.tangencylabs.solidcraft\t0.25.1\n"));
         installed.push(Package { manager: InstallSource::Flatpak, name: "ai.storyteller.solidcraft".into(), version: "0.26.0".into(), user: true });
         assert_eq!(find(sc, &installed, &[InstallSource::Flatpak]).map(|p| p.name.as_str()), Some("ai.storyteller.solidcraft"));

@@ -74,8 +74,9 @@ settings file must produce an error the user can act on, never a panic.
   mirror (`ARTCRAFT_LAUNCHER_DOWNLOAD_BASE`, `cargo xtask local`); keep it loopback-only and
   behind the `local-mirror` cargo feature, which release builds never enable.
 - Verify each download against the release's `SHA256SUMS.txt` before running or installing it.
-  On macOS the launcher also requires the Developer ID signature of the app's recorded team
-  (`CraftApp::mac_team`); an app with none (`mac_team = None`) is not installed there, only opened if present.
+  On macOS, personal fork builds must also pass code-signature integrity checks. Keep the
+  existing Developer ID, notarization, and macOS policy checks for upstream configurations.
+  An app with no recorded team (`mac_team = None`) is not installed there, only opened if present.
 - The details drawer's pictures are the one other download: JPEGs only, from a pinned tag of
   `https://raw.githubusercontent.com/storytold/craft-launcher-assets/` (`core::details`),
   capped at 2 MB each, cached, and never run. Pictures are not bundled in this repo.
@@ -109,7 +110,8 @@ means adding its row to every catalog marked `complete_menus` (the `*.tsv` files
 the English text, never through another catalog. Product and app names (ArtCraft Launcher, Craft
 App Suite, PhotoCraft…) stay in English.
 A CJK language is drawn with the system's own CJK font (`crates/ui-egui/src/cjk_font.rs`, desktop
-only; English where there is none): never bundle a CJK font, they are 10 MB and more.
+only; English where there is none): never bundle a CJK font, they are 10 MB and more. Georgian
+borrows the system's Georgian font the same way.
 
 ### Other rules
 

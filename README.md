@@ -102,33 +102,40 @@ The web version shows the same catalog in the browser, with the latest download 
 ## Interface languages
 
 The interface is in English, Brazilian Portuguese (Português (Brasil)), Czech (Čeština), French
-(Français), German (Deutsch), Hungarian (Magyar), Japanese (日本語), Polish (Polski), Russian
-(Русский), Simplified Chinese (简体中文) or Spanish (Español). **Auto**, the default, follows the
-system or browser language; **Settings → Language** picks one and switches at once, and the choice
-is kept between runs. Czech locales (`cs-CZ`, `cs_CZ.UTF-8`…) select Czech, German ones (`de-DE`,
-`de-AT`, `de-CH`, `de_DE.UTF-8`…) German, French ones (`fr-FR`, `fr-CA`…) French, Hungarian ones
-(`hu`, `hu-HU`, `hu_HU.UTF-8`…) Hungarian, Japanese ones (`ja`, `ja-JP`, `ja_JP.UTF-8`…) Japanese,
-Polish ones (`pl`, `pl-PL`, `pl_PL.UTF-8`) Polish, Spanish ones (`es-ES`, `es-MX`, `es-419`…)
-Spanish, and Portuguese ones (`pt-BR`, and `pt-PT` too, for now) Brazilian Portuguese. Simplified
-Chinese locales (`zh-CN`, `zh-SG`, `zh-Hans`, and POSIX forms such as `zh_CN.UTF-8`) select
-Chinese; Traditional Chinese ones don't. To try a language without changing the setting, start the
-desktop app with `ARTCRAFT_LAUNCHER_LOCALE=pt-BR`, or add `?lang=ru` to the web address.
+(Français), Georgian (ქართული), German (Deutsch), Hungarian (Magyar), Japanese (日本語), Polish
+(Polski), Russian (Русский), Simplified Chinese (简体中文), Traditional Chinese (繁體中文) or Spanish
+(Español). **Auto**, the default, follows the system or browser language; **Settings → Language**
+picks one and switches at once, and the choice is kept between runs. Czech locales (`cs-CZ`,
+`cs_CZ.UTF-8`…) select Czech, Georgian ones (`ka`, `ka-GE`, `ka_GE.UTF-8`…) Georgian, German ones
+(`de-DE`, `de-AT`, `de-CH`, `de_DE.UTF-8`…) German, French ones (`fr-FR`, `fr-CA`…) French, Hungarian
+ones (`hu`, `hu-HU`, `hu_HU.UTF-8`…) Hungarian, Japanese ones (`ja`, `ja-JP`, `ja_JP.UTF-8`…)
+Japanese, Polish ones (`pl`, `pl-PL`, `pl_PL.UTF-8`) Polish, Spanish ones (`es-ES`, `es-MX`,
+`es-419`…) Spanish, and Portuguese ones (`pt-BR`, and `pt-PT` too, for now) Brazilian Portuguese.
+Simplified Chinese locales (`zh-CN`, `zh-SG`, `zh-Hans`, and POSIX forms such as `zh_CN.UTF-8`)
+select Simplified Chinese; Traditional Chinese ones (`zh-TW`, `zh-HK`, `zh-MO`, `zh-Hant`, and POSIX
+forms such as `zh_TW.UTF-8`) select Traditional Chinese, with an explicit script winning over the
+region. To try a language without changing the setting, start the desktop app with
+`ARTCRAFT_LAUNCHER_LOCALE=pt-BR`, or add `?lang=ru` to the web address.
 
 The CJK languages are drawn with the system's own CJK font (Hiragino Sans or PingFang on macOS,
 Yu Gothic, Meiryo or Microsoft YaHei on Windows, Noto Sans CJK, IPA, Takao or WenQuanYi on Linux and
-FreeBSD). Where the system has no font for one, and in the web version, the interface stays in
-English and Settings says why. Product names and release notes stay as published; text without a
-translation falls back to English.
+FreeBSD); Traditional Chinese prefers an installed Noto Sans CJK TC, then PingFang TC, Microsoft
+JhengHei or MingLiU. Georgian is drawn the same way, with the system's Georgian font (SF Georgian or
+Arial Unicode on macOS, Sylfaen on Windows, Noto Sans Georgian or DejaVu Sans on Linux and FreeBSD).
+Where the system has no font for one, and in the web version, the interface stays in English and
+Settings says why. Product names and release notes stay as published; text without a translation
+falls back to English. See [`docs/localization-zh-hant.md`](docs/localization-zh-hant.md) for the
+Traditional Chinese catalog and font details.
 
 ## Where apps are installed
 
 ArtCraft Launcher installs each app where your system normally keeps applications, using the
-app's official release package, so an app installed by the launcher is the same as one you
+app's personal release package, so an app installed by the launcher is the same as one you
 installed by hand (and the launcher finds apps you installed yourself):
 
 | System | Where | How |
 |---|---|---|
-| macOS | `/Applications/<App>.app` | Copied from the signed, notarized release DMG |
+| macOS | `/Applications/<App>.app` | Copied from a personal release DMG after checksum and code-signature integrity checks. Personal builds do not require the upstream Developer ID or notarization |
 | Windows | `C:\Program Files\ArtCraft\<App>` (`Program Files (x86)` for a 32-bit build) | The release MSI, through Windows Installer, for everyone on the computer (with Start menu entry and Apps & features entry). Windows asks for administrator permission for each new install. An app already installed for your account only (`%LOCALAPPDATA%\Programs\ArtCraft\<App>`) keeps its folder and scope when updated; to move it, uninstall it and install it again |
 | Linux | `/usr/bin`, `/usr/share/applications` | The release `.deb` (apt) or `.rpm` (dnf, zypper), with your system's password prompt. Without those, a Flatpak, or an AppImage in `~/Applications` |
 | Linux, inside the launcher's Flatpak, with no Flatpak on the host | `~/.var/app/ai.storyteller.artcraft-launcher/data/artcraft-launcher/apps/<app>` | The release tarball, unpacked into the launcher's own folder and run inside the same sandbox, with its settings in a `home/` folder beside it. Nothing is installed on the host, and each app's configuration stays in the sandbox |
@@ -151,7 +158,9 @@ portable zip's executable) and keeps the previous two runs as `artcraft-launcher
 
 The personal release workflow currently produces unsigned Windows x64 packages only. The
 platform table below describes the upstream packaging formats; other personal builds are not
-available until their release setup is added. Unsigned launcher updates require manual installation.
+available until their release setup is added. Windows self-updates verify the personal release's
+`SHA256SUMS.txt` and accept unsigned packages. Older launcher builds that require publisher
+signatures need a manual update.
 
 Download the build for your computer from the [latest personal release](https://github.com/ElliottHitch/craft-launcher/releases/latest), or browse [all personal releases](https://github.com/ElliottHitch/craft-launcher/releases). Every release has a `SHA256SUMS.txt` to check the files against. `<ver>` is the version number, for example `0.1.0`.
 

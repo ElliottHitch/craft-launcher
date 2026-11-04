@@ -125,7 +125,13 @@ const fn app(
 /// The Craft App Suite, in display order matching getartcraft.com.
 pub const SUITE: [CraftApp; 13] = [
     app("photocraft", "PhotoCraft", "Image editing", [[0x2f, 0x7b, 0xf5], [0x1a, 0x5b, 0xc4], [0x7f, 0xb0, 0xff]], "ElliottHitch/photocraft"),
-    app("vectorcraft", "VectorCraft", "Vector illustration", [[0xe8, 0x57, 0x3f], [0xb8, 0x3a, 0x24], [0xff, 0x8a, 0x70]], "ElliottHitch/vectorcraft"),
+    app(
+        "vectorcraft",
+        "VectorCraft",
+        "Vector illustration",
+        [[0xe8, 0x57, 0x3f], [0xb8, 0x3a, 0x24], [0xff, 0x8a, 0x70]],
+        "ElliottHitch/vectorcraft",
+    ),
     app(
         "filmcraft",
         "FilmCraft",
@@ -172,7 +178,13 @@ pub const SUITE: [CraftApp; 13] = [
         [[0x02, 0xda, 0x96], [0x04, 0x7a, 0x56], [0x4f, 0xe8, 0xb6]],
         "ElliottHitch/figcraft",
     ),
-    app("wordcraft", "WordCraft", "Writing and document design", [[0x3f, 0x5f, 0xe0], [0x2a, 0x44, 0xb8], [0x8e, 0xa2, 0xff]], "ElliottHitch/wordcraft"),
+    app(
+        "wordcraft",
+        "WordCraft",
+        "Writing and document design",
+        [[0x3f, 0x5f, 0xe0], [0x2a, 0x44, 0xb8], [0x8e, 0xa2, 0xff]],
+        "ElliottHitch/wordcraft",
+    ),
     app(
         "soundcraft",
         "SoundCraft",
@@ -274,33 +286,27 @@ mod tests {
     }
 
     #[test]
-    fn suite_has_fourteen_apps_with_unique_ids() {
-        assert_eq!(SUITE.len(), 14);
+    fn suite_has_thirteen_personal_apps_with_unique_ids() {
+        assert_eq!(SUITE.len(), 13);
         let mut ids: Vec<_> = SUITE.iter().map(|a| a.id).collect();
         ids.sort_unstable();
         ids.dedup();
         assert_eq!(ids.len(), SUITE.len());
         for a in &SUITE {
             assert_eq!(a.name.to_lowercase(), a.id);
-            match a.kind {
-                AppKind::Official => assert_eq!(a.repo, format!("{GITHUB_OWNER}/{}", a.id)),
-                AppKind::Community => assert!(!a.repo.starts_with(&format!("{GITHUB_OWNER}/")), "{} is community", a.id),
-            }
+            assert_eq!(a.kind, AppKind::Official);
+            assert_eq!(a.repo, format!("{GITHUB_OWNER}/{}", a.id));
         }
     }
 
     #[test]
-    fn solidcraft_is_a_community_app_with_its_own_bundle_id() {
-        let sc = CraftApp::by_id("solidcraft").unwrap();
-        assert_eq!(sc.kind, AppKind::Community);
-        assert_eq!(sc.repo, "tangency-labs/solidcraft");
-        assert_eq!(sc.bundle_id(), "io.tangencylabs.solidcraft");
-        assert_eq!(sc.bundle_ids().collect::<Vec<_>>(), ["io.tangencylabs.solidcraft", "ai.storyteller.solidcraft", "ai.storyteller.solvecraft"]);
+    fn only_authorized_apps_are_available() {
+        for id in ["solidcraft", "craft-anything", "texturecraft", "materialcraft"] {
+            assert!(CraftApp::by_id(id).is_none());
+            assert!(app_icon_png(id).is_none());
+        }
         assert_eq!(CraftApp::by_id("gridcraft").unwrap().bundle_id(), "ai.storyteller.gridcraft");
         assert_eq!(CraftApp::by_id("gridcraft").unwrap().kind, AppKind::Official);
-        assert_eq!(sc.website(), "https://solidcraft.io");
-        assert!(sc.installs(crate::PackageKind::Dmg) && sc.installs(crate::PackageKind::Msi) && sc.installs(crate::PackageKind::Flatpak));
-        assert_eq!(sc.mac_team, Some("G5QA5U5X2S"));
         assert_eq!(CraftApp::by_id("gridcraft").unwrap().mac_team, Some(ARTCRAFT_TEAM_ID));
     }
 
