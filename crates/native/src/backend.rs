@@ -967,8 +967,10 @@ fn limit_notice(source_used: Source, limited_until: Option<i64>) -> Option<i64> 
     limited_until.filter(|_| matches!(source_used, Source::GitHubPages | Source::Cache))
 }
 
-/// The repo to ask GitHub about, following the feed's repo renames.
 fn feed_repo(feed: Option<&Feed>, app: &CraftApp) -> String {
+    if !USE_ARTCRAFT_RELEASE_FEED {
+        return app.repo.to_string();
+    }
     feed.map_or_else(|| app.repo.to_string(), |f| f.repo_for(app))
 }
 
@@ -1756,6 +1758,87 @@ mod tests {
         shared.latest.lock().unwrap().insert(APP.to_string(), release("0.5.0"));
         let shared = Arc::new(shared);
         NativeBackend { shared, paths: Paths::under(root), http: None, source, platform: Some(platform), pins: Some(root.join("versions.json")) }
+    }
+
+    fn cache_repo_rename(paths: &Paths) {
+        let body = r#"{"repo_renames": [{"old_name": "ElliottHitch/photocraft", "new_name": "ElliottHitch/photocraft-app"}]}"#;
+        std::fs::create_dir_all(&paths.cache).unwrap();
+        std::fs::write(paths.feed_cache(), body).unwrap();
+        assert_eq!(load_feed(paths).unwrap().repo_for(CraftApp::by_id(APP).unwrap()), "ElliottHitch/photocraft-app");
+    }
+
+    #[derive(Default)]
+    struct VersionRepos(Mutex<Vec<String>>);
+
+    impl ReleaseSource for VersionRepos {
+        fn latest(&self, _repo: &str, _prereleases: bool) -> Answer {
+            Answer { latest: LatestRelease::None, source: Source::GitHubApi }
+        }
+        fn versions(&self, repo: &str) -> Result<Vec<Release>, String> {
+            self.0.lock().unwrap().push(repo.to_string());
+            Ok(vec![tagged("0.14.0"), tagged("0.13.0")])
+        }
+        fn cached(&self, _repo: &str, _prereleases: bool) -> Option<LatestRelease> {
+            None
+        }
+        fn rate_limited_until(&self) -> Option<i64> {
+            None
+        }
+        fn save(&self) {}
+    }
+
+    #[test]
+    fn version_selection_ignores_a_cached_repo_rename_when_the_feed_is_disabled() {
+        let dir = tempfile::tempdir().unwrap();
+        let source = Arc::new(VersionRepos::default());
+        let mut backend = backend(dir.path(), Platform { os: Os::Windows, arch: Arch::X64 }, Some(source.clone()));
+        cache_repo_rename(&backend.paths);
+
+        backend.send(Command::ListVersions { app: APP.to_string() });
+        let mut result = None;
+        wait_until(|| {
+            result = backend.poll().into_iter().find_map(|event| match event {
+                Event::Versions { app, result } if app == APP => Some(result),
+                _ => None,
+            });
+            result.is_some()
+        });
+        assert_eq!(*source.0.lock().unwrap(), [CraftApp::by_id(APP).unwrap().repo]);
+        let releases = result.unwrap().unwrap();
+        let chosen = artcraft_launcher_core::release::choose_version(&releases, &VersionTrack::Pinned("v0.13.0".into())).unwrap();
+        assert_eq!(chosen.tag, "v0.13.0");
+    }
+
+    #[test]
+    fn rollback_selection_ignores_a_cached_repo_rename_when_the_feed_is_disabled() {
+        let dir = tempfile::tempdir().unwrap();
+        let source = Arc::new(VersionRepos::default());
+        let platform = Platform { os: Os::Windows, arch: Arch::X64 };
+        let backend = backend(dir.path(), platform, None);
+        cache_repo_rename(&backend.paths);
+        backend.shared.latest.lock().unwrap().insert(APP.to_string(), Release { assets: release("0.13.0").assets, ..tagged("0.13.0") });
+        let mut options = BackendOptions::default();
+        options.versions.insert(APP.to_string(), VersionTrack::Pinned("v0.13.0".into()));
+        let installed = Installed { version: version::parse("0.14.0"), source: InstallSource::Msi, location: String::new(), package: None };
+
+        let error = run_install(
+            CraftApp::by_id(APP).unwrap(),
+            &backend.shared,
+            &backend.paths,
+            Some(&Http::new().unwrap()),
+            Some(platform),
+            &options,
+            Some(&installed),
+            None,
+            &Stop::default(),
+            None,
+            Some(source.as_ref()),
+        )
+        .unwrap_err();
+        assert_eq!(*source.0.lock().unwrap(), [CraftApp::by_id(APP).unwrap().repo]);
+        assert_eq!(error, "PhotoCraft 0.14.0 has no matching download to put back, so nothing was changed.");
+        assert!(!backend.paths.downloads().exists());
+        assert!(backend.shared.events.lock().unwrap().is_empty());
     }
 
     /// Reports again, and returns what the UI was last told about a kept download.
